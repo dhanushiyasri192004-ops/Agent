@@ -24,9 +24,12 @@ import ShopList from './pages/shop/ShopList.jsx';
 // Other Pages
 import Reports from './pages/reports/Reports.jsx';
 import Notifications from './pages/notifications/Notifications.jsx';
-import Profile from './pages/profile/Profile.jsx';
-import SettingsPage from './pages/settings/Settings.jsx';
 import VendorManagement from './pages/vendor/VendorManagement.jsx';
+import Performance from './pages/dashboard/Performance.jsx';
+import TaskManagement from './pages/task/TaskManagement.jsx';
+import CalendarPage from './pages/calendar/CalendarPage.jsx';
+import Announcements from './pages/announcements/Announcements.jsx';
+import SettingsProfile from './pages/settings/SettingsProfile.jsx';
 
 // Layout
 import DashboardLayout from './components/layout/DashboardLayout.jsx';
@@ -111,6 +114,16 @@ function App() {
             <PrivateRoute>
               <DashboardLayout>
                 <Analytics />
+              </DashboardLayout>
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/performance"
+          element={
+            <PrivateRoute>
+              <DashboardLayout>
+                <Performance />
               </DashboardLayout>
             </PrivateRoute>
           }
@@ -203,21 +216,41 @@ function App() {
           }
         />
         <Route
-          path="/profile"
+          path="/tasks"
           element={
             <PrivateRoute>
               <DashboardLayout>
-                <Profile />
+                <TaskManagement />
               </DashboardLayout>
             </PrivateRoute>
           }
         />
         <Route
-          path="/settings"
+          path="/calendar"
           element={
             <PrivateRoute>
               <DashboardLayout>
-                <SettingsPage />
+                <CalendarPage />
+              </DashboardLayout>
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/announcements"
+          element={
+            <PrivateRoute>
+              <DashboardLayout>
+                <Announcements />
+              </DashboardLayout>
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/settings-profile"
+          element={
+            <PrivateRoute>
+              <DashboardLayout>
+                <SettingsProfile />
               </DashboardLayout>
             </PrivateRoute>
           }

@@ -20,6 +20,7 @@ import {
   Users,
   MapPin,
   Store,
+  Layers,
   Briefcase,
   Hourglass,
   TrendingUp,
@@ -359,6 +360,96 @@ const StateDashboard = () => {
                 </div>
               ))}
             </div>
+          </div>
+        </div>
+
+      </div>
+
+      {/* New Row: Government Project Assignment Flow & Vendor Subscriptions */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        
+        {/* Government Projects Assignment Flow */}
+        <div className="bg-white border border-slate-200/80 rounded-xl p-5 shadow-sm space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-base font-bold text-slate-800 flex items-center gap-2">
+              <Layers className="w-5 h-5 text-blue-600" /> Government Projects Assignment Flow
+            </h3>
+            <span className="bg-blue-50 text-blue-600 px-2 py-0.5 rounded text-[10px] font-bold uppercase">State Action</span>
+          </div>
+          
+          <div className="space-y-4">
+            {[
+              { name: 'Smart City Initiative', stage: 'Division Assigned', division: 'Coimbatore Division', district: 'Coimbatore', agent: 'Pending', step: 2 },
+              { name: 'Government Schools Electrification', stage: 'District Assigned', division: 'Chennai Division', district: 'Chennai North', agent: 'Ramesh K (PAG001)', step: 3 },
+              { name: 'Panchayat Drinking Water', stage: 'State Created', division: 'Unassigned', district: 'Unassigned', agent: 'Unassigned', step: 1 },
+              { name: 'Government Hospitals Sanitation', stage: 'Execution Phase', division: 'Madurai Division', district: 'Madurai East', agent: 'Vignesh S (PAG003)', step: 4 }
+            ].map((proj, idx) => (
+              <div key={idx} className="border-b border-slate-100 pb-3 last:border-0 last:pb-0 text-xs space-y-2 font-bold text-slate-500">
+                <div className="flex items-center justify-between font-black">
+                  <span className="text-slate-800">{proj.name}</span>
+                  <span className="text-blue-600 font-bold bg-blue-50/50 px-2 py-0.5 rounded text-[10px]">{proj.stage}</span>
+                </div>
+                
+                {/* Horizontal steps tracker */}
+                <div className="grid grid-cols-4 gap-1 text-[9px] font-bold text-slate-400 text-center relative pt-1">
+                  <div className={`pb-1 ${proj.step >= 1 ? 'text-blue-600 border-b-2 border-blue-600' : 'border-b-2 border-slate-100'}`}>1. Create</div>
+                  <div className={`pb-1 ${proj.step >= 2 ? 'text-blue-600 border-b-2 border-blue-600' : 'border-b-2 border-slate-100'}`}>2. Division</div>
+                  <div className={`pb-1 ${proj.step >= 3 ? 'text-blue-600 border-b-2 border-blue-600' : 'border-b-2 border-slate-100'}`}>3. District</div>
+                  <div className={`pb-1 ${proj.step >= 4 ? 'text-blue-600 border-b-2 border-blue-600' : 'border-b-2 border-slate-100'}`}>4. Execution</div>
+                </div>
+                
+                <div className="flex justify-between text-[10px] text-slate-400 font-semibold pt-1">
+                  <span>Div: <strong className="text-slate-650">{proj.division}</strong></span>
+                  <span>Dist: <strong className="text-slate-650">{proj.district}</strong></span>
+                  <span>Agent: <strong className="text-slate-650">{proj.agent}</strong></span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Vendor Subscription & Expiry alerts */}
+        <div className="bg-white border border-slate-200/80 rounded-xl p-5 shadow-sm space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-base font-bold text-slate-800 flex items-center gap-2">
+              <Store className="w-5 h-5 text-emerald-600" /> Vendor Subscription Management
+            </h3>
+            <span className="bg-emerald-50 text-emerald-600 px-2 py-0.5 rounded text-[10px] font-bold uppercase">Analytics</span>
+          </div>
+
+          <div className="grid grid-cols-3 gap-2 text-center text-xs font-bold">
+            <div className="bg-slate-50 border border-slate-150 p-2.5 rounded-lg">
+              <span className="block text-slate-400 text-[10px] uppercase">Monthly</span>
+              <span className="block text-slate-800 text-base font-black mt-1">1,845</span>
+            </div>
+            <div className="bg-slate-50 border border-slate-150 p-2.5 rounded-lg">
+              <span className="block text-slate-400 text-[10px] uppercase">Quarterly</span>
+              <span className="block text-slate-800 text-base font-black mt-1">650</span>
+            </div>
+            <div className="bg-[#eff6ff] border border-blue-100 p-2.5 rounded-lg">
+              <span className="block text-blue-600 text-[10px] uppercase">Annual</span>
+              <span className="block text-blue-700 text-base font-black mt-1">1,833</span>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <h4 className="text-xs font-black text-slate-700 uppercase tracking-wider">Renewal Alerts & Expiries</h4>
+            {[
+              { shop: 'Murugan Supermarket', type: 'Annual', date: 'Expires in 3 days', status: 'Immediate' },
+              { shop: 'Ganga Sweets & Bakery', type: 'Monthly', date: 'Expires in 7 days', status: 'Reminder' },
+              { shop: 'Anand medicals', type: 'Quarterly', date: 'Expires in 12 days', status: 'Reminder' }
+            ].map((alert, idx) => (
+              <div key={idx} className="flex items-center justify-between text-xs border-b border-slate-50 pb-2 last:border-0 last:pb-0 font-semibold">
+                <div>
+                  <span className="text-slate-800 font-extrabold block">{alert.shop}</span>
+                  <span className="text-[10px] text-slate-400 font-bold block">{alert.type} Subscription</span>
+                </div>
+                <div className="text-right">
+                  <span className="text-rose-600 font-bold block text-[10px]">{alert.date}</span>
+                  <span className={`inline-block text-[9px] px-1.5 py-0.2 rounded font-extrabold ${alert.status === 'Immediate' ? 'bg-rose-50 text-rose-600 border border-rose-100' : 'bg-amber-50 text-amber-600 border border-amber-100'}`}>{alert.status}</span>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
 

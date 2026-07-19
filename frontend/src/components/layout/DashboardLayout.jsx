@@ -34,6 +34,7 @@ const DashboardLayout = ({ children }) => {
   const [notifications, setNotifications] = useState([]);
   const [showNotificationsDropdown, setShowNotificationsDropdown] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
 
   // Collapsible sidebar menu states
   const [managementOpen, setManagementOpen] = useState(true);
@@ -109,7 +110,7 @@ const DashboardLayout = ({ children }) => {
     <div className="min-h-screen bg-[#f8fafc] flex text-slate-800 font-sans">
       
       {/* SIDEBAR FOR DESKTOP */}
-      <aside className={`w-64 bg-[#0a192f] flex flex-col z-30 transition-transform duration-300 fixed inset-y-0 left-0 md:static md:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+      <aside className={`w-64 bg-[#0a192f] flex flex-col z-30 transition-transform duration-300 fixed inset-y-0 left-0 md:sticky md:top-0 md:h-screen md:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         
         {/* Brand Header */}
         <div className="h-20 flex items-center gap-3 px-6 border-b border-slate-800">
@@ -162,7 +163,7 @@ const DashboardLayout = ({ children }) => {
                     to="/divisional-agents"
                     onClick={() => setSidebarOpen(false)}
                     className={`block px-3 py-2 rounded-md text-xs font-bold transition ${
-                      location.pathname === '/divisional-agents' ? 'text-white bg-slate-800' : 'text-slate-400 hover:text-white hover:bg-slate-800/30'
+                      location.pathname === '/divisional-agents' ? 'text-white bg-blue-600 shadow-md' : 'text-slate-400 hover:text-white hover:bg-slate-800/30'
                     }`}
                   >
                     Divisional Agents
@@ -171,7 +172,7 @@ const DashboardLayout = ({ children }) => {
                     to="/district-agents"
                     onClick={() => setSidebarOpen(false)}
                     className={`block px-3 py-2 rounded-md text-xs font-bold transition ${
-                      location.pathname === '/district-agents' ? 'text-white bg-slate-800' : 'text-slate-400 hover:text-white hover:bg-slate-800/30'
+                      location.pathname === '/district-agents' ? 'text-white bg-blue-600 shadow-md' : 'text-slate-400 hover:text-white hover:bg-slate-800/30'
                     }`}
                   >
                     District Agents
@@ -180,7 +181,7 @@ const DashboardLayout = ({ children }) => {
                     to="/pincode-agents"
                     onClick={() => setSidebarOpen(false)}
                     className={`block px-3 py-2 rounded-md text-xs font-bold transition ${
-                      location.pathname === '/pincode-agents' ? 'text-white bg-slate-800' : 'text-slate-400 hover:text-white hover:bg-slate-800/30'
+                      location.pathname === '/pincode-agents' ? 'text-white bg-blue-600 shadow-md' : 'text-slate-400 hover:text-white hover:bg-slate-800/30'
                     }`}
                   >
                     Pincode Agents
@@ -204,46 +205,56 @@ const DashboardLayout = ({ children }) => {
               {vendorOpen && (
                 <div className="pl-6 space-y-1.5 mt-1 border-l border-slate-800 ml-6">
                   <Link
-                    to="/vendor-management"
+                    to="/vendor-management?tab=overview"
                     onClick={() => setSidebarOpen(false)}
                     className={`block px-3 py-2 rounded-md text-xs font-bold transition ${
-                      location.pathname === '/vendor-management' ? 'text-white bg-slate-800' : 'text-slate-400 hover:text-white hover:bg-slate-800/30'
+                      (location.pathname === '/vendor-management' && (!location.search || location.search === '?tab=overview')) ? 'text-white bg-blue-600 shadow-md' : 'text-slate-400 hover:text-white hover:bg-slate-800/30'
                     }`}
                   >
                     Vendor Overview
                   </Link>
                   <Link
-                    to="/vendor-management"
+                    to="/vendor-management?tab=list"
                     onClick={() => setSidebarOpen(false)}
-                    className="block px-3 py-2 rounded-md text-xs font-bold text-slate-400 hover:text-white hover:bg-slate-800/30"
+                    className={`block px-3 py-2 rounded-md text-xs font-bold transition ${
+                      (location.pathname === '/vendor-management' && location.search === '?tab=list') ? 'text-white bg-blue-600 shadow-md' : 'text-slate-400 hover:text-white hover:bg-slate-800/30'
+                    }`}
                   >
                     Vendor List
                   </Link>
                   <Link
-                    to="/vendor-management"
+                    to="/vendor-management?tab=queries"
                     onClick={() => setSidebarOpen(false)}
-                    className="block px-3 py-2 rounded-md text-xs font-bold text-slate-400 hover:text-white hover:bg-slate-800/30"
+                    className={`block px-3 py-2 rounded-md text-xs font-bold transition ${
+                      (location.pathname === '/vendor-management' && location.search === '?tab=queries') ? 'text-white bg-blue-600 shadow-md' : 'text-slate-400 hover:text-white hover:bg-slate-800/30'
+                    }`}
                   >
                     Vendor Queries
                   </Link>
                   <Link
-                    to="/vendor-management"
+                    to="/vendor-management?tab=complaints"
                     onClick={() => setSidebarOpen(false)}
-                    className="block px-3 py-2 rounded-md text-xs font-bold text-slate-400 hover:text-white hover:bg-slate-800/30"
+                    className={`block px-3 py-2 rounded-md text-xs font-bold transition ${
+                      (location.pathname === '/vendor-management' && location.search === '?tab=complaints') ? 'text-white bg-blue-600 shadow-md' : 'text-slate-400 hover:text-white hover:bg-slate-800/30'
+                    }`}
                   >
                     Complaints
                   </Link>
                   <Link
-                    to="/vendor-management"
+                    to="/vendor-management?tab=services"
                     onClick={() => setSidebarOpen(false)}
-                    className="block px-3 py-2 rounded-md text-xs font-bold text-slate-400 hover:text-white hover:bg-slate-800/30"
+                    className={`block px-3 py-2 rounded-md text-xs font-bold transition ${
+                      (location.pathname === '/vendor-management' && location.search === '?tab=services') ? 'text-white bg-blue-600 shadow-md' : 'text-slate-400 hover:text-white hover:bg-slate-800/30'
+                    }`}
                   >
                     Service Requests
                   </Link>
                   <Link
-                    to="/vendor-management"
+                    to="/vendor-management?tab=feedback"
                     onClick={() => setSidebarOpen(false)}
-                    className="block px-3 py-2 rounded-md text-xs font-bold text-slate-400 hover:text-white hover:bg-slate-800/30"
+                    className={`block px-3 py-2 rounded-md text-xs font-bold transition ${
+                      (location.pathname === '/vendor-management' && location.search === '?tab=feedback') ? 'text-white bg-blue-600 shadow-md' : 'text-slate-400 hover:text-white hover:bg-slate-800/30'
+                    }`}
                   >
                     Vendor Feedback
                   </Link>
@@ -272,11 +283,94 @@ const DashboardLayout = ({ children }) => {
               {reportsOpen && (
                 <div className="pl-6 space-y-1.5 mt-1 border-l border-slate-800 ml-6">
                   <Link
-                    to="/reports"
+                    to="/reports?tab=daily"
                     onClick={() => setSidebarOpen(false)}
-                    className="block px-3 py-2 rounded-md text-xs font-bold text-slate-400 hover:text-white hover:bg-slate-800/30"
+                    className={`block px-3 py-2 rounded-md text-xs font-bold transition ${
+                      (location.pathname === '/reports' && location.search === '?tab=daily') ? 'text-white bg-blue-600 shadow-md' : 'text-slate-400 hover:text-white hover:bg-slate-800/30'
+                    }`}
                   >
                     Daily Reports
+                  </Link>
+                  <Link
+                    to="/reports?tab=weekly"
+                    onClick={() => setSidebarOpen(false)}
+                    className={`block px-3 py-2 rounded-md text-xs font-bold transition ${
+                      (location.pathname === '/reports' && location.search === '?tab=weekly') ? 'text-white bg-blue-600 shadow-md' : 'text-slate-400 hover:text-white hover:bg-slate-800/30'
+                    }`}
+                  >
+                    Weekly Reports
+                  </Link>
+                  <Link
+                    to="/reports?tab=monthly"
+                    onClick={() => setSidebarOpen(false)}
+                    className={`block px-3 py-2 rounded-md text-xs font-bold transition ${
+                      (location.pathname === '/reports' && location.search === '?tab=monthly') ? 'text-white bg-blue-600 shadow-md' : 'text-slate-400 hover:text-white hover:bg-slate-800/30'
+                    }`}
+                  >
+                    Monthly Reports
+                  </Link>
+                  <Link
+                    to="/reports?tab=agent"
+                    onClick={() => setSidebarOpen(false)}
+                    className={`block px-3 py-2 rounded-md text-xs font-bold transition ${
+                      (location.pathname === '/reports' && location.search === '?tab=agent') ? 'text-white bg-blue-600 shadow-md' : 'text-slate-400 hover:text-white hover:bg-slate-800/30'
+                    }`}
+                  >
+                    Agent Reports
+                  </Link>
+                  <Link
+                    to="/reports?tab=vendor"
+                    onClick={() => setSidebarOpen(false)}
+                    className={`block px-3 py-2 rounded-md text-xs font-bold transition ${
+                      (location.pathname === '/reports' && location.search === '?tab=vendor') ? 'text-white bg-blue-600 shadow-md' : 'text-slate-400 hover:text-white hover:bg-slate-800/30'
+                    }`}
+                  >
+                    Vendor Reports
+                  </Link>
+                  <Link
+                    to="/reports?tab=revenue"
+                    onClick={() => setSidebarOpen(false)}
+                    className={`block px-3 py-2 rounded-md text-xs font-bold transition ${
+                      (location.pathname === '/reports' && location.search === '?tab=revenue') ? 'text-white bg-blue-600 shadow-md' : 'text-slate-400 hover:text-white hover:bg-slate-800/30'
+                    }`}
+                  >
+                    Revenue Reports
+                  </Link>
+                  <Link
+                    to="/reports?tab=gov"
+                    onClick={() => setSidebarOpen(false)}
+                    className={`block px-3 py-2 rounded-md text-xs font-bold transition ${
+                      (location.pathname === '/reports' && location.search === '?tab=gov') ? 'text-white bg-blue-600 shadow-md' : 'text-slate-400 hover:text-white hover:bg-slate-800/30'
+                    }`}
+                  >
+                    Government Project Reports
+                  </Link>
+                  <Link
+                    to="/reports?tab=target"
+                    onClick={() => setSidebarOpen(false)}
+                    className={`block px-3 py-2 rounded-md text-xs font-bold transition ${
+                      (location.pathname === '/reports' && location.search === '?tab=target') ? 'text-white bg-blue-600 shadow-md' : 'text-slate-400 hover:text-white hover:bg-slate-800/30'
+                    }`}
+                  >
+                    Target & Performance Reports
+                  </Link>
+                  <Link
+                    to="/reports?tab=support"
+                    onClick={() => setSidebarOpen(false)}
+                    className={`block px-3 py-2 rounded-md text-xs font-bold transition ${
+                      (location.pathname === '/reports' && location.search === '?tab=support') ? 'text-white bg-blue-600 shadow-md' : 'text-slate-400 hover:text-white hover:bg-slate-800/30'
+                    }`}
+                  >
+                    Customer Support Reports
+                  </Link>
+                  <Link
+                    to="/reports?tab=export"
+                    onClick={() => setSidebarOpen(false)}
+                    className={`block px-3 py-2 rounded-md text-xs font-bold transition ${
+                      (location.pathname === '/reports' && location.search === '?tab=export') ? 'text-white bg-blue-600 shadow-md' : 'text-slate-400 hover:text-white hover:bg-slate-800/30'
+                    }`}
+                  >
+                    Export Center
                   </Link>
                 </div>
               )}
@@ -287,7 +381,7 @@ const DashboardLayout = ({ children }) => {
               to="/analytics"
               onClick={() => setSidebarOpen(false)}
               className={`flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-bold transition ${
-                location.pathname === '/analytics' ? 'text-white bg-slate-800' : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+                location.pathname === '/analytics' ? 'text-white bg-blue-600 shadow-md' : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
               }`}
             >
               <BarChart3 className="w-4.5 h-4.5" />
@@ -295,12 +389,16 @@ const DashboardLayout = ({ children }) => {
             </Link>
 
             {/* Performance */}
-            <button className="w-full flex items-center justify-between px-4 py-2.5 text-sm font-bold text-slate-400 hover:text-white hover:bg-slate-800/40 rounded-lg transition">
-              <div className="flex items-center gap-3">
-                <TrendingUp className="w-4.5 h-4.5" />
-                <span>Performance</span>
-              </div>
-            </button>
+            <Link
+              to="/performance"
+              onClick={() => setSidebarOpen(false)}
+              className={`flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-bold transition ${
+                location.pathname === '/performance' ? 'text-white bg-blue-600 shadow-md' : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+              }`}
+            >
+              <TrendingUp className="w-4.5 h-4.5" />
+              <span>Performance</span>
+            </Link>
           </div>
 
           {/* Section: OTHER */}
@@ -308,72 +406,66 @@ const DashboardLayout = ({ children }) => {
             <p className="px-4 text-[11px] font-black text-slate-500 uppercase tracking-widest">Other</p>
 
             {/* Task Management */}
-            <button className="w-full flex items-center justify-between px-4 py-2.5 text-sm font-bold text-slate-400 hover:text-white hover:bg-slate-800/40 rounded-lg transition">
-              <div className="flex items-center gap-3">
-                <CheckSquare className="w-4.5 h-4.5" />
-                <span>Task Management</span>
-              </div>
-            </button>
+            <Link
+              to="/tasks"
+              onClick={() => setSidebarOpen(false)}
+              className={`flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-bold transition ${
+                location.pathname === '/tasks' ? 'text-white bg-blue-600 shadow-md' : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+              }`}
+            >
+              <CheckSquare className="w-4.5 h-4.5" />
+              <span>Task Management</span>
+            </Link>
 
             {/* Calendar */}
-            <button className="w-full flex items-center justify-between px-4 py-2.5 text-sm font-bold text-slate-400 hover:text-white hover:bg-slate-800/40 rounded-lg transition">
-              <div className="flex items-center gap-3">
-                <Calendar className="w-4.5 h-4.5" />
-                <span>Calendar</span>
-              </div>
-            </button>
+            <Link
+              to="/calendar"
+              onClick={() => setSidebarOpen(false)}
+              className={`flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-bold transition ${
+                location.pathname === '/calendar' ? 'text-white bg-blue-600 shadow-md' : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+              }`}
+            >
+              <Calendar className="w-4.5 h-4.5" />
+              <span>Calendar</span>
+            </Link>
 
             {/* Notifications */}
             <Link
               to="/notifications"
               onClick={() => setSidebarOpen(false)}
               className={`flex items-center justify-between px-4 py-2.5 rounded-lg text-sm font-bold transition ${
-                location.pathname === '/notifications' ? 'text-white bg-slate-800' : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+                location.pathname === '/notifications' ? 'text-white bg-blue-600 shadow-md' : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
               }`}
             >
               <div className="flex items-center gap-3">
                 <Bell className="w-4.5 h-4.5" />
                 <span>Notifications</span>
               </div>
-              {unreadCount > 0 ? (
-                <span className="bg-red-500 text-white text-[11px] px-2 py-0.5 rounded-full font-bold">
-                  {unreadCount}
-                </span>
-              ) : (
-                <span className="bg-red-500 text-white text-[11px] px-2 py-0.5 rounded-full font-bold">12</span>
-              )}
+              <span className="bg-red-500 text-white text-[11px] px-2 py-0.5 rounded-full font-bold">12</span>
             </Link>
 
             {/* Announcements */}
-            <button className="w-full flex items-center justify-between px-4 py-2.5 text-sm font-bold text-slate-400 hover:text-white hover:bg-slate-800/40 rounded-lg transition">
-              <div className="flex items-center gap-3">
-                <Megaphone className="w-4.5 h-4.5" />
-                <span>Announcements</span>
-              </div>
-            </button>
-
-            {/* Settings */}
             <Link
-              to="/settings"
+              to="/announcements"
               onClick={() => setSidebarOpen(false)}
               className={`flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-bold transition ${
-                location.pathname === '/settings' ? 'text-white bg-slate-800' : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+                location.pathname === '/announcements' ? 'text-white bg-blue-600 shadow-md' : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+              }`}
+            >
+              <Megaphone className="w-4.5 h-4.5" />
+              <span>Announcements</span>
+            </Link>
+
+            {/* Settings & Profile */}
+            <Link
+              to="/settings-profile"
+              onClick={() => setSidebarOpen(false)}
+              className={`flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-bold transition ${
+                location.pathname === '/settings-profile' ? 'text-white bg-blue-600 shadow-md' : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
               }`}
             >
               <Settings className="w-4.5 h-4.5" />
-              <span>Settings</span>
-            </Link>
-
-            {/* Profile */}
-            <Link
-              to="/profile"
-              onClick={() => setSidebarOpen(false)}
-              className={`flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-bold transition ${
-                location.pathname === '/profile' ? 'text-white bg-slate-800' : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
-              }`}
-            >
-              <User className="w-4.5 h-4.5" />
-              <span>Profile</span>
+              <span>Settings & Profile</span>
             </Link>
           </div>
 
@@ -382,7 +474,7 @@ const DashboardLayout = ({ children }) => {
         {/* Sidebar Footer User Card */}
         <div className="p-4 border-t border-slate-800">
           <button
-            onClick={handleLogout}
+            onClick={() => setShowLogoutModal(true)}
             className="w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-bold text-slate-400 hover:text-red-400 hover:bg-red-950/20 transition"
           >
             <LogOut className="w-4.5 h-4.5" />
@@ -505,24 +597,19 @@ const DashboardLayout = ({ children }) => {
               {userDropdownOpen && (
                 <div className="absolute right-0 mt-3 w-48 bg-white border border-slate-200 rounded-xl shadow-xl overflow-hidden z-40 py-1">
                   <Link
-                    to="/profile"
-                    onClick={() => setUserDropdownOpen(false)}
-                    className="flex items-center gap-2.5 px-4 py-2.5 text-xs text-slate-600 hover:text-slate-800 hover:bg-slate-50 transition"
-                  >
-                    <User className="w-4 h-4" />
-                    Profile
-                  </Link>
-                  <Link
-                    to="/settings"
+                    to="/settings-profile"
                     onClick={() => setUserDropdownOpen(false)}
                     className="flex items-center gap-2.5 px-4 py-2.5 text-xs text-slate-600 hover:text-slate-800 hover:bg-slate-50 transition"
                   >
                     <Settings className="w-4 h-4" />
-                    Settings
+                    Settings & Profile
                   </Link>
                   <div className="border-t border-slate-100 my-1"></div>
                   <button
-                    onClick={handleLogout}
+                    onClick={() => {
+                      setUserDropdownOpen(false);
+                      setShowLogoutModal(true);
+                    }}
                     className="flex items-center gap-2.5 w-full text-left px-4 py-2.5 text-xs text-red-600 hover:bg-red-50 transition"
                   >
                     <LogOut className="w-4 h-4" />
@@ -540,6 +627,37 @@ const DashboardLayout = ({ children }) => {
           {children}
         </main>
       </div>
+
+      {/* Logout Confirmation Modal Overlay */}
+      {showLogoutModal && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+          <div className="bg-white border border-slate-200 rounded-2xl max-w-sm w-full p-6 shadow-2xl space-y-5 text-center">
+            <div className="w-16 h-16 rounded-full bg-rose-50 border border-rose-100 flex items-center justify-center mx-auto text-rose-500">
+              <LogOut className="w-8 h-8 rotate-185" />
+            </div>
+            <div className="space-y-2">
+              <h3 className="text-lg font-black text-slate-850">Confirm Logout</h3>
+              <p className="text-xs text-slate-400 font-semibold leading-relaxed">
+                Are you sure you want to logout? <br /> You will be logged out from the system.
+              </p>
+            </div>
+            <div className="flex gap-3 text-xs font-bold pt-2">
+              <button
+                onClick={() => setShowLogoutModal(false)}
+                className="flex-1 bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 py-3 rounded-xl transition font-extrabold"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleLogout}
+                className="flex-1 bg-rose-600 hover:bg-rose-700 text-white py-3 rounded-xl shadow-md transition font-extrabold flex items-center justify-center gap-1.5"
+              >
+                <LogOut className="w-4 h-4" /> Logout
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );

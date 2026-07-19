@@ -6,16 +6,22 @@ import {
   MessageSquare, Star
 } from 'lucide-react';
 import {
-  BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
+  BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell
 } from 'recharts';
+import { Link, useLocation } from 'react-router-dom';
 
 const VendorManagement = () => {
   const [showModal, setShowModal] = useState(false);
+  const location = useLocation();
+  const queryParams = new URLSearchParams(location.search);
+  const activeTab = queryParams.get('tab') || 'overview';
 
   // Filters
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedDistrict, setSelectedDistrict] = useState('All Districts');
   const [selectedStatus, setSelectedStatus] = useState('All Status');
+  const [selectedPriority, setSelectedPriority] = useState('All Priority');
+  const [selectedRating, setSelectedRating] = useState('All Ratings');
 
   // Form fields
   const [name, setName] = useState('');
@@ -27,61 +33,48 @@ const VendorManagement = () => {
   const [success, setSuccess] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
-  // Initial mockup vendors list
-  const initialMockVendors = [
-    {
-      id: 'VEN10001',
-      name: 'Rajesh Kumar',
-      phone: '+91 98765 43210',
-      district: 'Chennai',
-      pincode: '600001',
-      agent: 'Karthik S',
-      status: 'Active',
-      email: 'rajesh@gmail.com'
-    },
-    {
-      id: 'VEN10002',
-      name: 'Priya M',
-      phone: '+91 91234 56789',
-      district: 'Coimbatore',
-      pincode: '641001',
-      agent: 'Monica R',
-      status: 'Active',
-      email: 'priya@gmail.com'
-    },
-    {
-      id: 'VEN10003',
-      name: 'Suresh B',
-      phone: '+91 99887 76655',
-      district: 'Madurai',
-      pincode: '625001',
-      agent: 'Suresh B',
-      status: 'Active',
-      email: 'suresh@gmail.com'
-    },
-    {
-      id: 'VEN10004',
-      name: 'Anitha P',
-      phone: '+91 87654 32109',
-      district: 'Salem',
-      pincode: '636001',
-      agent: 'Deepak K',
-      status: 'Inactive',
-      email: 'anitha@gmail.com'
-    },
-    {
-      id: 'VEN10005',
-      name: 'Vijay R',
-      phone: '+91 90012 34567',
-      district: 'Trichy',
-      pincode: '620001',
-      agent: 'Vijayalakshmi',
-      status: 'Active',
-      email: 'vijay@gmail.com'
-    }
+  // Mock Data arrays matching the layouts
+  const mockVendorsList = [
+    { id: 'VEN10001', name: 'Rajesh Kumar', phone: '+91 98765 43210', district: 'Chennai', pincode: '600001', category: 'Electronics', agent: 'Karthik S', status: 'Active', email: 'rajesh@gmail.com' },
+    { id: 'VEN10002', name: 'Priya M', phone: '+91 91234 56789', district: 'Coimbatore', pincode: '641001', category: 'Hardware', agent: 'Monica R', status: 'Active', email: 'priya@gmail.com' },
+    { id: 'VEN10003', name: 'Suresh B', phone: '+91 99887 76655', district: 'Madurai', pincode: '625001', category: 'Medical', agent: 'Suresh B', status: 'Active', email: 'suresh@gmail.com' },
+    { id: 'VEN10004', name: 'Anitha P', phone: '+91 87654 32109', district: 'Salem', pincode: '636001', category: 'Clothing', agent: 'Deepak K', status: 'Inactive', email: 'anitha@gmail.com' },
+    { id: 'VEN10005', name: 'Vijay R', phone: '+91 90012 34567', district: 'Trichy', pincode: '620001', category: 'Stationery', agent: 'Vijayalakshmi', status: 'Active', email: 'vijay@gmail.com' }
   ];
 
-  const [vendors, setVendors] = useState(initialMockVendors);
+  const mockQueries = [
+    { id: 'QRY12001', vendor: 'Rajesh Kumar', phone: '+91 98765 43210', type: 'Pricing', priority: 'High', status: 'Open', agent: 'Karthik S', date: '15 May 2025' },
+    { id: 'QRY12002', vendor: 'Priya M', phone: '+91 91234 56789', type: 'Delivery', priority: 'High', status: 'Open', agent: 'Monica R', date: '15 May 2025' },
+    { id: 'QRY12003', vendor: 'Suresh B', phone: '+91 99887 76655', type: 'Product', priority: 'Low', status: 'Resolved', agent: 'Suresh B', date: '15 May 2025' },
+    { id: 'QRY12004', vendor: 'Anitha P', phone: '+91 87654 32109', type: 'Service', priority: 'High', status: 'Open', agent: 'Deepak K', date: '15 May 2025' },
+    { id: 'QRY12005', vendor: 'Vijay R', phone: '+91 90012 34567', type: 'Billing', priority: 'Medium', status: 'Pending', agent: 'Vijayalakshmi', date: '15 May 2025' }
+  ];
+
+  const mockComplaints = [
+    { id: 'CMP22001', vendor: 'Rajesh Kumar', category: 'Product', priority: 'High', status: 'Open', agent: 'Karthik S', date: '15 May 2025' },
+    { id: 'CMP22002', vendor: 'Priya M', category: 'Delivery', priority: 'High', status: 'Open', agent: 'Monica R', date: '15 May 2025' },
+    { id: 'CMP22003', vendor: 'Suresh B', category: 'Billing', priority: 'Low', status: 'Resolved', agent: 'Suresh B', date: '15 May 2025' },
+    { id: 'CMP22004', vendor: 'Anitha P', category: 'Service', priority: 'High', status: 'Open', agent: 'Deepak K', date: '15 May 2025' },
+    { id: 'CMP22005', vendor: 'Vijay R', category: 'Quality', priority: 'Medium', status: 'Pending', agent: 'Vijayalakshmi', date: '15 May 2025' }
+  ];
+
+  const mockServiceRequests = [
+    { id: 'SRV32001', vendor: 'Rajesh Kumar', type: 'AC Service', priority: 'High', status: 'In Progress', agent: 'Karthik S', date: '15 May 2025' },
+    { id: 'SRV32002', vendor: 'Priya M', type: 'Electrical', priority: 'Medium', status: 'Completed', agent: 'Monica R', date: '15 May 2025' },
+    { id: 'SRV32003', vendor: 'Suresh B', type: 'Plumbing', priority: 'Low', status: 'Completed', agent: 'Suresh B', date: '15 May 2025' },
+    { id: 'SRV32004', vendor: 'Anitha P', type: 'Washing Machine', priority: 'High', status: 'Pending', agent: 'Deepak K', date: '15 May 2025' },
+    { id: 'SRV32005', vendor: 'Vijay R', type: 'RO Purifier', priority: 'Medium', status: 'Pending', agent: 'Vijayalakshmi', date: '15 May 2025' }
+  ];
+
+  const mockFeedbacks = [
+    { id: 'FDB42001', vendor: 'Rajesh Kumar', rating: 5, comment: 'Excellent service and response time', type: 'AC Service', date: '15 May 2025' },
+    { id: 'FDB42002', vendor: 'Priya M', rating: 4, comment: 'Good response time', type: 'Electrical', date: '15 May 2025' },
+    { id: 'FDB42003', vendor: 'Suresh B', rating: 5, comment: 'Very professional team', type: 'Plumbing', date: '15 May 2025' },
+    { id: 'FDB42004', vendor: 'Anitha P', rating: 3, comment: 'Need improvement in quality', type: 'Washing Machine', date: '15 May 2025' },
+    { id: 'FDB42005', vendor: 'Vijay R', rating: 5, comment: 'Good support', type: 'RO Purifier', date: '15 May 2025' }
+  ];
+
+  const [vendors, setVendors] = useState(mockVendorsList);
 
   const handleStatusToggle = (id) => {
     setVendors(prev => prev.map(c => c.id === id ? { ...c, status: c.status === 'Active' ? 'Inactive' : 'Active' } : c));
@@ -105,6 +98,7 @@ const VendorManagement = () => {
       phone,
       district,
       pincode,
+      category: 'General',
       agent: 'State Agent',
       status: 'Active',
       email: email || 'N/A'
@@ -125,19 +119,17 @@ const VendorManagement = () => {
     }, 1500);
   };
 
-  // Filter vendors
+  // Filters logic
   const filteredVendors = vendors.filter(c => {
     const matchesSearch = c.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
                           c.phone.includes(searchTerm) ||
                           c.id.toLowerCase().includes(searchTerm.toLowerCase());
-    
     const matchesDistrict = selectedDistrict === 'All Districts' || c.district === selectedDistrict;
     const matchesStatus = selectedStatus === 'All Status' || c.status === selectedStatus;
-
     return matchesSearch && matchesDistrict && matchesStatus;
   });
 
-  // Recharts chart data
+  // Recharts Chart Mock Data
   const regTrendData = [
     { name: '01 May', Vendors: 100 },
     { name: '06 May', Vendors: 180 },
@@ -157,9 +149,11 @@ const VendorManagement = () => {
     { name: 'Others', value: 46842 }
   ];
 
-  return (
-    <div className="space-y-6 text-slate-800">
-      
+  const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'];
+
+  // View Renders
+  const renderOverview = () => (
+    <>
       {/* Top Header */}
       <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
         <div>
@@ -179,103 +173,27 @@ const VendorManagement = () => {
 
       {/* Grid of 8 Stats Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-3">
-        
-        {/* Total Vendors */}
-        <div className="bg-white border border-slate-200 rounded-xl p-3.5 shadow-sm flex flex-col justify-between">
-          <div className="flex items-center justify-between">
-            <span className="text-[10px] font-bold text-blue-600 uppercase tracking-wider">Total Vendors</span>
-            <Users className="w-4 h-4 text-blue-500" />
+        {[
+          { label: 'Total Vendors', value: '8,75,231', sub: 'View all vendors', color: 'text-blue-600', icon: Users },
+          { label: 'Active Vendors', value: '8,10,450', sub: '92.61% of total', color: 'text-emerald-600', icon: Users },
+          { label: 'New Vendors', value: '245', sub: 'View new vendors', color: 'text-indigo-600', icon: Users },
+          { label: 'Vendor Queries', value: '1,268', sub: 'View all queries', color: 'text-amber-600', icon: MessageSquare },
+          { label: 'Open Complaints', value: '156', sub: 'View complaints', color: 'text-rose-600', icon: ShieldAlert },
+          { label: 'Resolved', value: '1,112', sub: 'View resolved', color: 'text-teal-600', icon: Check },
+          { label: 'VSAT Rate', value: '94%', sub: 'View feedback', color: 'text-blue-600', icon: Star },
+          { label: 'Service Requests', value: '12,845', sub: 'View requests', color: 'text-slate-500', icon: FileText }
+        ].map((card, idx) => (
+          <div key={idx} className="bg-white border border-slate-200 rounded-xl p-3.5 shadow-sm flex flex-col justify-between">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{card.label}</span>
+              <card.icon className={`w-4 h-4 ${card.color}`} />
+            </div>
+            <div className="mt-2">
+              <p className="text-xl font-black text-slate-800">{card.value}</p>
+              <span className={`text-[10px] font-bold block mt-1 ${card.color}`}>{card.sub}</span>
+            </div>
           </div>
-          <div className="mt-2">
-            <p className="text-xl font-black text-slate-800">8,75,231</p>
-            <span className="text-[10px] text-blue-500 hover:underline cursor-pointer font-bold block mt-1">View all vendors</span>
-          </div>
-        </div>
-
-        {/* Active Vendors */}
-        <div className="bg-white border border-slate-200 rounded-xl p-3.5 shadow-sm flex flex-col justify-between">
-          <div className="flex items-center justify-between">
-            <span className="text-[10px] font-bold text-emerald-600 uppercase tracking-wider">Active Vendors</span>
-            <Users className="w-4 h-4 text-emerald-500" />
-          </div>
-          <div className="mt-2">
-            <p className="text-xl font-black text-slate-800">8,10,450</p>
-            <span className="text-[10px] text-emerald-600 font-bold block mt-1">92.61% of total</span>
-          </div>
-        </div>
-
-        {/* New Vendors Today */}
-        <div className="bg-white border border-slate-200 rounded-xl p-3.5 shadow-sm flex flex-col justify-between">
-          <div className="flex items-center justify-between">
-            <span className="text-[10px] font-bold text-indigo-600 uppercase tracking-wider">New Vendors</span>
-            <Users className="w-4 h-4 text-indigo-500" />
-          </div>
-          <div className="mt-2">
-            <p className="text-xl font-black text-slate-800">245</p>
-            <span className="text-[10px] text-indigo-500 hover:underline cursor-pointer font-bold block mt-1">View new vendors</span>
-          </div>
-        </div>
-
-        {/* Vendor Queries */}
-        <div className="bg-white border border-slate-200 rounded-xl p-3.5 shadow-sm flex flex-col justify-between">
-          <div className="flex items-center justify-between">
-            <span className="text-[10px] font-bold text-amber-600 uppercase tracking-wider">Vendor Queries</span>
-            <MessageSquare className="w-4 h-4 text-amber-500" />
-          </div>
-          <div className="mt-2">
-            <p className="text-xl font-black text-slate-800">1,268</p>
-            <span className="text-[10px] text-amber-500 hover:underline cursor-pointer font-bold block mt-1">View all queries</span>
-          </div>
-        </div>
-
-        {/* Open Complaints */}
-        <div className="bg-white border border-slate-200 rounded-xl p-3.5 shadow-sm flex flex-col justify-between">
-          <div className="flex items-center justify-between">
-            <span className="text-[10px] font-bold text-rose-600 uppercase tracking-wider">Open Complaints</span>
-            <ShieldAlert className="w-4 h-4 text-rose-500" />
-          </div>
-          <div className="mt-2">
-            <p className="text-xl font-black text-slate-800">156</p>
-            <span className="text-[10px] text-rose-600 hover:underline cursor-pointer font-bold block mt-1">View complaints</span>
-          </div>
-        </div>
-
-        {/* Resolved Complaints */}
-        <div className="bg-white border border-slate-200 rounded-xl p-3.5 shadow-sm flex flex-col justify-between">
-          <div className="flex items-center justify-between">
-            <span className="text-[10px] font-bold text-teal-600 uppercase tracking-wider">Resolved</span>
-            <Check className="w-4 h-4 text-teal-500" />
-          </div>
-          <div className="mt-2">
-            <p className="text-xl font-black text-slate-800">1,112</p>
-            <span className="text-[10px] text-teal-600 hover:underline cursor-pointer font-bold block mt-1">View resolved</span>
-          </div>
-        </div>
-
-        {/* Vendor Satisfaction */}
-        <div className="bg-white border border-slate-200 rounded-xl p-3.5 shadow-sm flex flex-col justify-between">
-          <div className="flex items-center justify-between">
-            <span className="text-[10px] font-bold text-blue-600 uppercase tracking-wider">VSAT Rate</span>
-            <Star className="w-4 h-4 text-blue-500" />
-          </div>
-          <div className="mt-2">
-            <p className="text-xl font-black text-slate-800">94%</p>
-            <span className="text-[10px] text-blue-500 hover:underline cursor-pointer font-bold block mt-1">View feedback</span>
-          </div>
-        </div>
-
-        {/* Total Service Requests */}
-        <div className="bg-white border border-slate-200 rounded-xl p-3.5 shadow-sm flex flex-col justify-between">
-          <div className="flex items-center justify-between">
-            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Service Requests</span>
-            <FileText className="w-4 h-4 text-slate-400" />
-          </div>
-          <div className="mt-2">
-            <p className="text-xl font-black text-slate-800">12,845</p>
-            <span className="text-[10px] text-slate-500 hover:underline cursor-pointer font-bold block mt-1">View requests</span>
-          </div>
-        </div>
-
+        ))}
       </div>
 
       {/* Main body layout */}
@@ -283,8 +201,6 @@ const VendorManagement = () => {
         
         {/* Left Side: Table & Filters */}
         <div className="lg:col-span-2 space-y-4">
-          
-          {/* Filters Bar */}
           <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm flex flex-col md:flex-row md:items-center gap-3">
             <div className="flex-1 relative">
               <Search className="w-4.5 h-4.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
@@ -300,7 +216,7 @@ const VendorManagement = () => {
               <select
                 value={selectedDistrict}
                 onChange={(e) => setSelectedDistrict(e.target.value)}
-                className="bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-slate-600 outline-none"
+                className="bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-slate-650 outline-none"
               >
                 <option>All Districts</option>
                 <option>Chennai</option>
@@ -309,30 +225,27 @@ const VendorManagement = () => {
                 <option>Salem</option>
                 <option>Trichy</option>
               </select>
-
               <select
                 value={selectedStatus}
                 onChange={(e) => setSelectedStatus(e.target.value)}
-                className="bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-slate-600 outline-none"
+                className="bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-slate-650 outline-none"
               >
                 <option>All Status</option>
                 <option>Active</option>
                 <option>Inactive</option>
               </select>
-
               <button className="flex items-center gap-1.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-600 rounded-lg px-3.5 py-2 transition font-bold">
                 <Download className="w-4 h-4 text-slate-500" /> Export
               </button>
             </div>
           </div>
 
-          {/* Vendor Table List */}
+          {/* Table */}
           <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
             <div className="p-4 border-b border-slate-100 flex items-center justify-between">
               <h3 className="text-base font-bold text-slate-800">Vendor List</h3>
               <span className="text-xs font-bold text-slate-400">Total: {filteredVendors.length} Vendors</span>
             </div>
-
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs border-collapse">
                 <thead>
@@ -370,25 +283,17 @@ const VendorManagement = () => {
                         <span
                           onClick={() => handleStatusToggle(cust.id)}
                           className={`px-2.5 py-0.5 rounded-full text-xs font-bold border cursor-pointer select-none transition ${
-                            cust.status === 'Active'
-                              ? 'bg-emerald-50 text-emerald-600 border-emerald-100 hover:bg-emerald-100'
-                              : 'bg-rose-50 text-rose-600 border-rose-100 hover:bg-rose-100'
+                            cust.status === 'Active' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-rose-50 text-rose-600 border-rose-100'
                           }`}
                         >
                           {cust.status}
                         </span>
                       </td>
-                      <td className="p-4">
+                      <td className="p-4 text-center">
                         <div className="flex items-center justify-center gap-2 text-slate-400">
-                          <button className="hover:text-blue-600 transition" title="Edit Vendor">
-                            <Edit2 className="w-3.5 h-3.5" />
-                          </button>
-                          <button className="hover:text-emerald-600 transition" title="View Profile">
-                            <Eye className="w-3.5 h-3.5" />
-                          </button>
-                          <button className="hover:text-slate-600 transition" title="More Options">
-                            <MoreVertical className="w-3.5 h-3.5" />
-                          </button>
+                          <button className="hover:text-blue-600 transition"><Edit2 className="w-3.5 h-3.5" /></button>
+                          <button className="hover:text-emerald-600 transition"><Eye className="w-3.5 h-3.5" /></button>
+                          <button className="hover:text-slate-600 transition"><MoreVertical className="w-3.5 h-3.5" /></button>
                         </div>
                       </td>
                     </tr>
@@ -396,76 +301,28 @@ const VendorManagement = () => {
                 </tbody>
               </table>
             </div>
-
-            {/* Pagination */}
-            <div className="p-4 border-t border-slate-100 flex items-center justify-between font-bold text-xs text-slate-500">
-              <span>Showing 1 to {filteredVendors.length} of {filteredVendors.length} entries</span>
-              <div className="flex items-center gap-2">
-                <button className="px-2 py-1 rounded border border-slate-200 bg-slate-50 hover:bg-slate-100">&lt;</button>
-                <button className="px-2.5 py-1 rounded bg-blue-600 text-white">1</button>
-                <button className="px-2.5 py-1 rounded border border-slate-200 hover:bg-slate-100">2</button>
-                <button className="px-2.5 py-1 rounded border border-slate-200 hover:bg-slate-100">3</button>
-                <button className="px-2 py-1 rounded border border-slate-200 bg-slate-50 hover:bg-slate-100">&gt;</button>
-                <select className="bg-white border border-slate-200 rounded px-1.5 py-1 outline-none text-slate-600 ml-2">
-                  <option>5 / page</option>
-                  <option>10 / page</option>
-                </select>
-              </div>
-            </div>
-
           </div>
-
         </div>
 
-        {/* Right Side: Charts & Recent Feedback */}
+        {/* Right Side Info */}
         <div className="space-y-6">
-          
-          {/* Vendor Query Overview */}
           <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="text-base font-bold text-slate-800">Vendor Query Overview</h3>
-              <span className="text-xs text-blue-600 hover:underline font-bold cursor-pointer">View All</span>
-            </div>
-            
+            <h3 className="text-base font-bold text-slate-800">Vendor Query Overview</h3>
             <div className="flex flex-col items-center justify-center min-h-[160px]">
               <div className="w-28 h-28 rounded-full border-8 border-slate-100 flex items-center justify-center flex-col">
                 <span className="text-lg font-black text-slate-800">1,268</span>
                 <span className="text-[10px] text-slate-400 font-bold uppercase">Queries</span>
               </div>
-              <div className="w-full grid grid-cols-2 gap-2 text-[10px] font-bold text-slate-500 mt-4 border-t border-slate-50 pt-3">
-                <div className="flex items-center gap-1.5">
-                  <span className="w-2 h-2 rounded-full bg-blue-500"></span>
-                  <span>Open: 336 (26.5%)</span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <span className="w-2 h-2 rounded-full bg-amber-500"></span>
-                  <span>Progress: 285 (22.5%)</span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-                  <span>Resolved: 367 (28.9%)</span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <span className="w-2 h-2 rounded-full bg-rose-500"></span>
-                  <span>Escalated: 70 (5.5%)</span>
-                </div>
-              </div>
             </div>
           </div>
-
-          {/* Recent Vendor Activities */}
+          
           <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="text-base font-bold text-slate-800">Recent Vendor Activities</h3>
-              <span className="text-xs text-blue-600 hover:underline font-bold cursor-pointer">View All</span>
-            </div>
+            <h3 className="text-base font-bold text-slate-800">Recent Vendor Activities</h3>
             <div className="space-y-4">
               {[
                 { text: 'New vendor Arjun K registered', time: 'Today, 10:30 AM', color: 'bg-blue-500' },
                 { text: 'Complaint #CMP1234 submitted by Priya M', time: 'Today, 09:45 AM', color: 'bg-emerald-500' },
-                { text: 'Service request #SR5678 completed', time: 'Today, 08:20 AM', color: 'bg-indigo-500' },
-                { text: 'Feedback received from Ramesh Kumar', time: 'Today, 06:50 AM', color: 'bg-amber-500' },
-                { text: 'Profile updated by Suresh B', time: 'Today, 06:15 AM', color: 'bg-teal-500' }
+                { text: 'Service request #SR5678 completed', time: 'Today, 08:20 AM', color: 'bg-indigo-500' }
               ].map((act, idx) => (
                 <div key={idx} className="flex gap-3 text-xs">
                   <div className={`w-1.5 h-1.5 rounded-full mt-1.5 shrink-0 ${act.color}`}></div>
@@ -477,205 +334,563 @@ const VendorManagement = () => {
               ))}
             </div>
           </div>
-
         </div>
 
       </div>
+    </>
+  );
 
-      {/* Row 4: Vendor Registration Trend & Division Breakdown */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        
-        {/* Vendor Registration Trend */}
-        <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm flex flex-col justify-between">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-base font-bold text-slate-800">Vendor Registration Trend</h3>
-            <span className="text-xs text-blue-600 font-bold">This Month</span>
+  const renderList = () => (
+    <>
+      <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
+        <div>
+          <h1 className="text-2xl font-black text-slate-800">Vendor List</h1>
+          <p className="text-sm text-slate-500 mt-1 font-semibold">View and manage all vendors across the state.</p>
+        </div>
+        <button
+          onClick={() => setShowModal(true)}
+          className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold px-5 py-2.5 rounded-lg shadow-md transition"
+        >
+          <Plus className="w-4.5 h-4.5" /> Add Vendor
+        </button>
+      </div>
+
+      {/* 4 Stats Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {[
+          { label: 'Total Vendors', value: '8,75,231', color: 'bg-blue-50 border-blue-100 text-blue-600' },
+          { label: 'Active Vendors', value: '8,10,450', color: 'bg-emerald-50 border-emerald-100 text-emerald-600' },
+          { label: 'New Vendors', value: '245', color: 'bg-indigo-50 border-indigo-100 text-indigo-600' },
+          { label: 'Inactive Vendors', value: '64,781', color: 'bg-rose-50 border-rose-100 text-rose-600' }
+        ].map((card, idx) => (
+          <div key={idx} className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm flex items-center justify-between">
+            <div>
+              <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">{card.label}</span>
+              <p className="text-2xl font-black text-slate-800 mt-1">{card.value}</p>
+            </div>
+            <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${card.color}`}>
+              <Users className="w-6 h-6" />
+            </div>
           </div>
-          <div className="h-44 w-full">
+        ))}
+      </div>
+
+      {/* Filters & Table */}
+      <div className="space-y-4">
+        <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm flex flex-col md:flex-row md:items-center gap-3">
+          <div className="flex-1 relative">
+            <Search className="w-4.5 h-4.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+            <input
+              type="text"
+              placeholder="Search by name, mobile, vendor ID..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full bg-slate-50 border border-slate-200 rounded-lg pl-10 pr-4 py-2 text-sm text-slate-700 outline-none focus:bg-white focus:border-blue-500 font-medium transition"
+            />
+          </div>
+          <div className="flex flex-wrap gap-2 text-sm font-bold">
+            <select className="bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-slate-650 outline-none">
+              <option>All Districts</option>
+            </select>
+            <select className="bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-slate-650 outline-none">
+              <option>All Status</option>
+            </select>
+            <button className="flex items-center gap-1.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-600 rounded-lg px-3.5 py-2 font-bold transition">
+              <Download className="w-4 h-4 text-slate-500" /> Export
+            </button>
+          </div>
+        </div>
+
+        <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+          <table className="w-full text-left text-xs border-collapse">
+            <thead>
+              <tr className="bg-slate-50/70 border-b border-slate-100 text-slate-400 font-bold uppercase tracking-wider">
+                <th className="p-4">Vendor ID</th>
+                <th className="p-4">Vendor Name</th>
+                <th className="p-4">Mobile Number</th>
+                <th className="p-4">District</th>
+                <th className="p-4">Pincode</th>
+                <th className="p-4">Category</th>
+                <th className="p-4">Assigned Agent</th>
+                <th className="p-4">Status</th>
+                <th className="p-4 text-center">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {filteredVendors.map((c) => (
+                <tr key={c.id} className="hover:bg-slate-50/50 text-slate-600 font-bold transition">
+                  <td className="p-4 font-mono text-slate-450">{c.id}</td>
+                  <td className="p-4 text-slate-800 font-extrabold">{c.name}</td>
+                  <td className="p-4 font-mono text-slate-700">{c.phone}</td>
+                  <td className="p-4 text-slate-500">{c.district}</td>
+                  <td className="p-4 font-mono text-slate-500">{c.pincode}</td>
+                  <td className="p-4 text-blue-600 font-semibold">{c.category}</td>
+                  <td className="p-4 text-slate-600">{c.agent}</td>
+                  <td className="p-4">
+                    <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold border ${c.status === 'Active' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-rose-50 text-rose-600 border-rose-100'}`}>{c.status}</span>
+                  </td>
+                  <td className="p-4 text-center">
+                    <div className="flex items-center justify-center gap-2 text-slate-450">
+                      <button className="hover:text-blue-600"><Edit2 className="w-3.5 h-3.5" /></button>
+                      <button className="hover:text-emerald-600"><Eye className="w-3.5 h-3.5" /></button>
+                      <button className="hover:text-slate-600"><MoreVertical className="w-3.5 h-3.5" /></button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </>
+  );
+
+  const renderQueries = () => (
+    <>
+      <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
+        <div>
+          <h1 className="text-2xl font-black text-slate-800">Vendor Queries</h1>
+          <p className="text-sm text-slate-500 mt-1 font-semibold">Track and manage vendor queries.</p>
+        </div>
+      </div>
+
+      {/* 6 Stats Cards */}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+        {[
+          { label: 'Total Queries', value: '1,268', color: 'bg-blue-50 text-blue-600' },
+          { label: 'Open', value: '336', color: 'bg-rose-50 text-rose-600' },
+          { label: 'In Progress', value: '285', color: 'bg-indigo-50 text-indigo-650' },
+          { label: 'Pending', value: '210', color: 'bg-amber-50 text-amber-600' },
+          { label: 'Resolved', value: '367', color: 'bg-emerald-50 text-emerald-600' },
+          { label: 'Escalated', value: '70', color: 'bg-red-50 text-red-600' }
+        ].map((card, idx) => (
+          <div key={idx} className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm flex flex-col justify-between">
+            <span className="text-[10px] font-bold text-slate-450 uppercase tracking-wider">{card.label}</span>
+            <p className={`text-2xl font-black mt-2 ${card.color.split(' ')[1]}`}>{card.value}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* Table & Filters */}
+      <div className="space-y-4">
+        <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm flex flex-col md:flex-row md:items-center gap-3">
+          <div className="flex-1 relative">
+            <Search className="w-4.5 h-4.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+            <input
+              type="text"
+              placeholder="Search by vendor name, mobile, query ID..."
+              className="w-full bg-slate-50 border border-slate-200 rounded-lg pl-10 pr-4 py-2 text-sm text-slate-700 outline-none focus:bg-white focus:border-blue-500 font-medium transition"
+            />
+          </div>
+          <div className="flex flex-wrap gap-2 text-sm font-bold">
+            <select className="bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-slate-650 outline-none"><option>All Districts</option></select>
+            <select className="bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-slate-650 outline-none"><option>All Status</option></select>
+            <select className="bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-slate-650 outline-none"><option>All Priority</option></select>
+            <button className="flex items-center gap-1.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-600 rounded-lg px-3.5 py-2 font-bold transition">
+              <Download className="w-4 h-4 text-slate-500" /> Export
+            </button>
+          </div>
+        </div>
+
+        <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+          <table className="w-full text-left text-xs border-collapse">
+            <thead>
+              <tr className="bg-slate-50/70 border-b border-slate-100 text-slate-400 font-bold uppercase tracking-wider">
+                <th className="p-4">Query ID</th>
+                <th className="p-4">Vendor Name</th>
+                <th className="p-4">Mobile Number</th>
+                <th className="p-4">Query Type</th>
+                <th className="p-4">Priority</th>
+                <th className="p-4">Status</th>
+                <th className="p-4">Assigned Agent</th>
+                <th className="p-4">Date</th>
+                <th className="p-4 text-center">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {mockQueries.map((q) => (
+                <tr key={q.id} className="hover:bg-slate-50/50 text-slate-600 font-bold transition">
+                  <td className="p-4 font-mono text-slate-450">{q.id}</td>
+                  <td className="p-4 text-slate-800 font-extrabold">{q.vendor}</td>
+                  <td className="p-4 font-mono text-slate-700">{q.phone}</td>
+                  <td className="p-4 text-slate-600">{q.type}</td>
+                  <td className="p-4">
+                    <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${q.priority === 'High' ? 'bg-red-50 text-red-650' : 'bg-blue-50 text-blue-650'}`}>{q.priority}</span>
+                  </td>
+                  <td className="p-4">
+                    <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold border ${q.status === 'Resolved' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-amber-50 text-amber-600 border-amber-100'}`}>{q.status}</span>
+                  </td>
+                  <td className="p-4 text-slate-500">{q.agent}</td>
+                  <td className="p-4 text-slate-500">{q.date}</td>
+                  <td className="p-4 text-center">
+                    <div className="flex items-center justify-center gap-2 text-slate-450">
+                      <button className="hover:text-blue-600"><Edit2 className="w-3.5 h-3.5" /></button>
+                      <button className="hover:text-slate-600"><MoreVertical className="w-3.5 h-3.5" /></button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </>
+  );
+
+  const renderComplaints = () => (
+    <>
+      <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
+        <div>
+          <h1 className="text-2xl font-black text-slate-800">Vendor Complaints</h1>
+          <p className="text-sm text-slate-500 mt-1 font-semibold">Track and resolve vendor complaints.</p>
+        </div>
+      </div>
+
+      {/* 6 Stats Cards */}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+        {[
+          { label: 'Total Complaints', value: '1,468', color: 'text-blue-600' },
+          { label: 'Open', value: '156', color: 'text-rose-600' },
+          { label: 'In Progress', value: '328', color: 'text-indigo-600' },
+          { label: 'Pending', value: '210', color: 'text-amber-600' },
+          { label: 'Resolved', value: '1,112', color: 'text-emerald-600' },
+          { label: 'Escalated', value: '70', color: 'text-red-600' }
+        ].map((card, idx) => (
+          <div key={idx} className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm flex flex-col justify-between">
+            <span className="text-[10px] font-bold text-slate-450 uppercase tracking-wider">{card.label}</span>
+            <p className={`text-2xl font-black mt-2 ${card.color}`}>{card.value}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* Table & Filters */}
+      <div className="space-y-4">
+        <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm flex flex-col md:flex-row md:items-center gap-3">
+          <div className="flex-1 relative">
+            <Search className="w-4.5 h-4.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+            <input
+              type="text"
+              placeholder="Search complaints..."
+              className="w-full bg-slate-50 border border-slate-200 rounded-lg pl-10 pr-4 py-2 text-sm text-slate-700 outline-none focus:bg-white focus:border-blue-500 font-medium transition"
+            />
+          </div>
+          <div className="flex flex-wrap gap-2 text-sm font-bold">
+            <select className="bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-slate-650 outline-none"><option>All Districts</option></select>
+            <select className="bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-slate-650 outline-none"><option>All Status</option></select>
+            <button className="flex items-center gap-1.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-650 rounded-lg px-3.5 py-2 font-bold transition">
+              <Download className="w-4 h-4 text-slate-500" /> Export
+            </button>
+          </div>
+        </div>
+
+        <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+          <table className="w-full text-left text-xs border-collapse">
+            <thead>
+              <tr className="bg-slate-50/70 border-b border-slate-100 text-slate-400 font-bold uppercase tracking-wider">
+                <th className="p-4">Complaint ID</th>
+                <th className="p-4">Vendor Name</th>
+                <th className="p-4">Category</th>
+                <th className="p-4">Priority</th>
+                <th className="p-4">Status</th>
+                <th className="p-4">Assigned Agent</th>
+                <th className="p-4">Date</th>
+                <th className="p-4 text-center">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {mockComplaints.map((c) => (
+                <tr key={c.id} className="hover:bg-slate-50/50 text-slate-600 font-bold transition">
+                  <td className="p-4 font-mono text-slate-450">{c.id}</td>
+                  <td className="p-4 text-slate-800 font-extrabold">{c.vendor}</td>
+                  <td className="p-4 text-slate-600">{c.category}</td>
+                  <td className="p-4">
+                    <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${c.priority === 'High' ? 'bg-red-50 text-red-650' : 'bg-blue-50 text-blue-650'}`}>{c.priority}</span>
+                  </td>
+                  <td className="p-4">
+                    <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold border ${c.status === 'Resolved' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-amber-50 text-amber-600 border-amber-100'}`}>{c.status}</span>
+                  </td>
+                  <td className="p-4 text-slate-550">{c.agent}</td>
+                  <td className="p-4 text-slate-500">{c.date}</td>
+                  <td className="p-4 text-center">
+                    <div className="flex items-center justify-center gap-2 text-slate-450">
+                      <button className="hover:text-blue-600"><Edit2 className="w-3.5 h-3.5" /></button>
+                      <button className="hover:text-slate-600"><MoreVertical className="w-3.5 h-3.5" /></button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Two Charts at bottom */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
+        <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
+          <h3 className="text-base font-bold text-slate-800 mb-4">Complaints by Category</h3>
+          <div className="h-56">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie data={[
+                  { name: 'Product', value: 345 },
+                  { name: 'Delivery', value: 210 },
+                  { name: 'Billing', value: 256 },
+                  { name: 'Service', value: 185 },
+                  { name: 'Quality', value: 148 }
+                ]} cx="50%" cy="50%" innerRadius={60} outerRadius={80} paddingAngle={5} dataKey="value">
+                  {COLORS.map((color, index) => <Cell key={`cell-${index}`} fill={color} />)}
+                </Pie>
+                <Tooltip />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+        <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
+          <h3 className="text-base font-bold text-slate-800 mb-4">Complaint Trend</h3>
+          <div className="h-56">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={regTrendData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
                 <XAxis dataKey="name" fontSize={9} stroke="#64748b" />
                 <YAxis fontSize={9} stroke="#64748b" />
                 <Tooltip />
-                <Line type="monotone" dataKey="Vendors" stroke="#2563eb" strokeWidth={2.5} dot={{ fill: '#2563eb' }} />
+                <Line type="monotone" dataKey="Vendors" stroke="#ef4444" strokeWidth={2.5} dot={{ fill: '#ef4444' }} />
               </LineChart>
             </ResponsiveContainer>
           </div>
         </div>
+      </div>
+    </>
+  );
 
-        {/* Vendors by Division */}
-        <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm flex flex-col justify-between">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-base font-bold text-slate-800">Vendors by Division</h3>
-            <span className="text-xs text-blue-600 hover:underline font-bold cursor-pointer">View All</span>
-          </div>
-          <div className="space-y-3">
-            {divisionData.map((d, idx) => (
-              <div key={idx} className="space-y-1 text-xs">
-                <div className="flex items-center justify-between font-bold">
-                  <span className="text-slate-600">{d.name}</span>
-                  <span className="text-slate-800">{d.value.toLocaleString()}</span>
-                </div>
-                <div className="bg-slate-100 h-1.5 rounded-full overflow-hidden">
-                  <div className="bg-blue-600 h-full rounded-full" style={{ width: `${(d.value / 245231) * 100}%` }}></div>
-                </div>
-              </div>
-            ))}
-          </div>
+  const renderServices = () => (
+    <>
+      <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
+        <div>
+          <h1 className="text-2xl font-black text-slate-800">Service Requests</h1>
+          <p className="text-sm text-slate-500 mt-1 font-semibold">Track and manage vendor service requests.</p>
         </div>
-
-        {/* Complaint Analysis */}
-        <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm flex flex-col justify-between">
-          <div>
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-base font-bold text-slate-800">Complaint Analysis</h3>
-              <span className="text-xs text-blue-600 hover:underline font-bold cursor-pointer">View All</span>
-            </div>
-            <div className="space-y-3.5">
-              {[
-                { name: 'Electrical', count: 345, pct: '22.1%' },
-                { name: 'Plumbing', count: 210, pct: '13.4%' },
-                { name: 'AC Services', count: 256, pct: '16.4%' },
-                { name: 'Washing Machine', count: 185, pct: '11.8%' },
-                { name: 'Refrigerator', count: 148, pct: '9.5%' }
-              ].map((c, idx) => (
-                <div key={idx} className="flex items-center justify-between text-xs border-b border-slate-50 pb-2.5 last:border-0 last:pb-0">
-                  <span className="font-extrabold text-slate-700">{c.name}</span>
-                  <div className="text-right">
-                    <span className="font-black text-slate-800">{c.count} </span>
-                    <span className="text-slate-400">({c.pct})</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* Vendor Satisfaction Rating */}
-        <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm flex flex-col justify-between">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-base font-bold text-slate-800">Vendor Satisfaction</h3>
-            <span className="text-xs text-blue-600 hover:underline font-bold cursor-pointer">View All</span>
-          </div>
-
-          <div className="flex-1 flex flex-col items-center justify-center min-h-[160px]">
-            <div className="w-28 h-28 rounded-full border-8 border-slate-100 flex items-center justify-center flex-col">
-              <span className="text-lg font-black text-slate-800">94%</span>
-              <span className="text-[10px] text-emerald-600 font-bold uppercase">Excellent</span>
-            </div>
-            
-            <div className="w-full grid grid-cols-4 gap-1 text-[9px] font-bold text-slate-500 mt-4 border-t border-slate-50 pt-3 text-center">
-              <div>
-                <span className="block text-emerald-600">Excellent</span>
-                <span className="block text-slate-800 text-xs">72%</span>
-              </div>
-              <div>
-                <span className="block text-blue-500">Good</span>
-                <span className="block text-slate-800 text-xs">22%</span>
-              </div>
-              <div>
-                <span className="block text-amber-500">Average</span>
-                <span className="block text-slate-800 text-xs">4%</span>
-              </div>
-              <div>
-                <span className="block text-rose-500">Poor</span>
-                <span className="block text-slate-800 text-xs">2%</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
       </div>
 
-      {/* Row 5: Districts list, Map, and Feedback */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        
-        {/* Top Districts */}
-        <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm flex flex-col justify-between">
-          <div>
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-base font-bold text-slate-800">Top Districts by Vendors</h3>
-              <span className="text-xs text-blue-600 hover:underline font-bold cursor-pointer">View All</span>
-            </div>
-            <div className="space-y-4">
-              {[
-                { name: 'Chennai', count: '1,25,000' },
-                { name: 'Coimbatore', count: '95,400' },
-                { name: 'Madurai', count: '84,300' },
-                { name: 'Salem', count: '73,200' },
-                { name: 'Trichy', count: '68,700' }
-              ].map((d, idx) => (
-                <div key={idx} className="flex items-center justify-between text-xs border-b border-slate-50 pb-3 last:border-0 last:pb-0">
-                  <div className="flex items-center gap-2">
-                    <span className="w-5 h-5 rounded bg-blue-50 text-blue-600 font-bold flex items-center justify-center text-[10px]">
-                      {idx + 1}
-                    </span>
-                    <span className="font-extrabold text-slate-700">{d.name}</span>
-                  </div>
-                  <span className="font-black text-slate-800">{d.count}</span>
-                </div>
-              ))}
-            </div>
+      {/* 6 Stats Cards */}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+        {[
+          { label: 'Total Requests', value: '12,845', color: 'text-blue-600' },
+          { label: 'New Requests', value: '245', color: 'text-rose-600' },
+          { label: 'In Progress', value: '5,632', color: 'text-indigo-650' },
+          { label: 'Pending', value: '3,210', color: 'text-amber-600' },
+          { label: 'Completed', value: '3,458', color: 'text-emerald-600' },
+          { label: 'Cancelled', value: '300', color: 'text-slate-400' }
+        ].map((card, idx) => (
+          <div key={idx} className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm flex flex-col justify-between">
+            <span className="text-[10px] font-bold text-slate-450 uppercase tracking-wider">{card.label}</span>
+            <p className={`text-2xl font-black mt-2 ${card.color}`}>{card.value}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* Table & Filters */}
+      <div className="space-y-4">
+        <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm flex flex-col md:flex-row md:items-center gap-3">
+          <div className="flex-1 relative">
+            <Search className="w-4.5 h-4.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+            <input
+              type="text"
+              placeholder="Search service requests..."
+              className="w-full bg-slate-50 border border-slate-200 rounded-lg pl-10 pr-4 py-2 text-sm text-slate-700 outline-none focus:bg-white focus:border-blue-500 font-medium transition"
+            />
+          </div>
+          <div className="flex flex-wrap gap-2 text-sm font-bold">
+            <select className="bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-slate-650 outline-none"><option>All Districts</option></select>
+            <button className="flex items-center gap-1.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-600 rounded-lg px-3.5 py-2 font-bold transition">
+              <Download className="w-4 h-4 text-slate-500" /> Export
+            </button>
           </div>
         </div>
 
-        {/* Vendor Feedback */}
-        <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm flex flex-col justify-between">
-          <div>
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-base font-bold text-slate-800">Latest Vendor Feedback</h3>
-              <span className="text-xs text-blue-600 hover:underline font-bold cursor-pointer">View All</span>
-            </div>
-            <div className="space-y-3.5">
-              {[
-                { name: 'Rajesh Kumar', comment: 'Excellent service and quick response!', stars: 5, dist: 'Chennai' },
-                { name: 'Priya M', comment: 'Technician was very professional.', stars: 4, dist: 'Coimbatore' },
-                { name: 'Suresh B', comment: 'Good support and assistance.', stars: 5, dist: 'Madurai' }
-              ].map((f, idx) => (
-                <div key={idx} className="space-y-1.5 border-b border-slate-50 pb-3 last:border-0 last:pb-0 text-xs">
-                  <div className="flex items-center justify-between font-bold">
-                    <span className="text-slate-800">{f.name} ({f.dist})</span>
-                    <div className="flex items-center text-amber-500">
-                      {Array.from({ length: f.stars }).map((_, i) => (
-                        <Star key={i} className="w-3.5 h-3.5 fill-current" />
-                      ))}
+        <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+          <table className="w-full text-left text-xs border-collapse">
+            <thead>
+              <tr className="bg-slate-50/70 border-b border-slate-100 text-slate-400 font-bold uppercase tracking-wider">
+                <th className="p-4">Request ID</th>
+                <th className="p-4">Vendor Name</th>
+                <th className="p-4">Service Type</th>
+                <th className="p-4">Priority</th>
+                <th className="p-4">Status</th>
+                <th className="p-4">Assigned Agent</th>
+                <th className="p-4">Date</th>
+                <th className="p-4 text-center">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {mockServiceRequests.map((s) => (
+                <tr key={s.id} className="hover:bg-slate-50/50 text-slate-600 font-bold transition">
+                  <td className="p-4 font-mono text-slate-450">{s.id}</td>
+                  <td className="p-4 text-slate-800 font-extrabold">{s.vendor}</td>
+                  <td className="p-4 text-slate-650">{s.type}</td>
+                  <td className="p-4">
+                    <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${s.priority === 'High' ? 'bg-red-50 text-red-650' : 'bg-blue-50 text-blue-650'}`}>{s.priority}</span>
+                  </td>
+                  <td className="p-4">
+                    <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold border ${s.status === 'Completed' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-indigo-50 text-indigo-600 border-indigo-100'}`}>{s.status}</span>
+                  </td>
+                  <td className="p-4 text-slate-550">{s.agent}</td>
+                  <td className="p-4 text-slate-500">{s.date}</td>
+                  <td className="p-4 text-center">
+                    <div className="flex items-center justify-center gap-2 text-slate-450">
+                      <button className="hover:text-blue-600"><Edit2 className="w-3.5 h-3.5" /></button>
+                      <button className="hover:text-slate-600"><MoreVertical className="w-3.5 h-3.5" /></button>
                     </div>
-                  </div>
-                  <p className="text-slate-500 leading-snug">{f.comment}</p>
-                </div>
+                  </td>
+                </tr>
               ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
+        <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
+          <h3 className="text-base font-bold text-slate-800 mb-4">Requests by Service Type</h3>
+          <div className="h-56">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie data={[
+                  { name: 'AC Service', value: 4000 },
+                  { name: 'Electrical', value: 3000 },
+                  { name: 'Plumbing', value: 2000 },
+                  { name: 'Washing Machine', value: 2780 },
+                  { name: 'RO Purifier', value: 1890 }
+                ]} cx="50%" cy="50%" innerRadius={60} outerRadius={80} paddingAngle={5} dataKey="value">
+                  {COLORS.map((color, index) => <Cell key={`cell-${index}`} fill={color} />)}
+                </Pie>
+                <Tooltip />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+        <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
+          <h3 className="text-base font-bold text-slate-800 mb-4">Request Status Overview</h3>
+          <div className="h-56">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={[
+                { name: 'New', value: 245 },
+                { name: 'In Progress', value: 5632 },
+                { name: 'Pending', value: 3210 },
+                { name: 'Completed', value: 3458 },
+                { name: 'Cancelled', value: 300 }
+              ]}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                <XAxis dataKey="name" stroke="#64748b" fontSize={11} />
+                <YAxis stroke="#64748b" fontSize={11} />
+                <Tooltip />
+                <Bar dataKey="value" fill="#4f46e5" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+
+  const renderFeedback = () => (
+    <>
+      <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
+        <div>
+          <h1 className="text-2xl font-black text-slate-800">Vendor Feedback</h1>
+          <p className="text-sm text-slate-500 mt-1 font-semibold">Track and review vendor feedback and ratings.</p>
+        </div>
+      </div>
+
+      {/* 4 Stats Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {[
+          { label: 'Total Feedback', value: '5,842', color: 'bg-blue-50 border-blue-100 text-blue-650' },
+          { label: 'Average Rating', value: '4.6 / 5', color: 'bg-emerald-50 border-emerald-100 text-emerald-600' },
+          { label: 'Positive Feedback', value: '4,852', color: 'bg-indigo-50 border-indigo-100 text-indigo-600' },
+          { label: 'Negative Feedback', value: '990', color: 'bg-rose-50 border-rose-100 text-rose-600' }
+        ].map((card, idx) => (
+          <div key={idx} className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm flex items-center justify-between">
+            <div>
+              <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">{card.label}</span>
+              <p className="text-2xl font-black text-slate-800 mt-1">{card.value}</p>
+            </div>
+            <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${card.color}`}>
+              <Star className="w-6 h-6 fill-current" />
             </div>
           </div>
-        </div>
+        ))}
+      </div>
 
-        {/* Quick Actions Footer Panel */}
-        <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm flex flex-col justify-between">
-          <h3 className="text-base font-bold text-slate-800 mb-4">Quick Actions</h3>
-          <div className="grid grid-cols-2 gap-3 flex-1">
-            <button
-              onClick={() => setShowModal(true)}
-              className="bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl p-4 flex flex-col items-center justify-center text-center transition gap-2 group"
-            >
-              <Plus className="w-5.5 h-5.5 text-blue-600 group-hover:scale-110 transition duration-200" />
-              <span className="text-xs font-bold text-slate-700 uppercase leading-none mt-1">Add Vendor</span>
-            </button>
-            <button className="bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl p-4 flex flex-col items-center justify-center text-center transition gap-2 group">
-              <Download className="w-5.5 h-5.5 text-emerald-600 group-hover:scale-110 transition duration-200" />
-              <span className="text-xs font-bold text-slate-700 uppercase leading-none mt-1">Vendor Report</span>
-            </button>
-            <button className="bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl p-4 flex flex-col items-center justify-center text-center transition gap-2 group">
-              <Send className="w-5.5 h-5.5 text-purple-600 group-hover:scale-110 transition duration-200" />
-              <span className="text-xs font-bold text-slate-700 uppercase leading-none mt-1">Send Notification</span>
-            </button>
-            <button className="bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl p-4 flex flex-col items-center justify-center text-center transition gap-2 group">
-              <Download className="w-5.5 h-5.5 text-orange-600 group-hover:scale-110 transition duration-200" />
-              <span className="text-xs font-bold text-slate-700 uppercase leading-none mt-1">Export List</span>
+      {/* Table & Filters */}
+      <div className="space-y-4">
+        <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm flex flex-col md:flex-row md:items-center gap-3">
+          <div className="flex-1 relative">
+            <Search className="w-4.5 h-4.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+            <input
+              type="text"
+              placeholder="Search feedback..."
+              className="w-full bg-slate-50 border border-slate-200 rounded-lg pl-10 pr-4 py-2 text-sm text-slate-700 outline-none focus:bg-white focus:border-blue-500 font-medium transition"
+            />
+          </div>
+          <div className="flex flex-wrap gap-2 text-sm font-bold">
+            <select className="bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-slate-650 outline-none"><option>All Districts</option></select>
+            <select className="bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-slate-650 outline-none"><option>All Ratings</option></select>
+            <button className="flex items-center gap-1.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-600 rounded-lg px-3.5 py-2 font-bold transition">
+              <Download className="w-4 h-4 text-slate-500" /> Export
             </button>
           </div>
         </div>
 
+        <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+          <table className="w-full text-left text-xs border-collapse">
+            <thead>
+              <tr className="bg-slate-50/70 border-b border-slate-100 text-slate-400 font-bold uppercase tracking-wider">
+                <th className="p-4">Feedback ID</th>
+                <th className="p-4">Vendor Name</th>
+                <th className="p-4">Rating</th>
+                <th className="p-4">Feedback Comment</th>
+                <th className="p-4">Service Type</th>
+                <th className="p-4">Date</th>
+                <th className="p-4 text-center">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {mockFeedbacks.map((f) => (
+                <tr key={f.id} className="hover:bg-slate-50/50 text-slate-600 font-bold transition">
+                  <td className="p-4 font-mono text-slate-450">{f.id}</td>
+                  <td className="p-4 text-slate-800 font-extrabold">{f.vendor}</td>
+                  <td className="p-4">
+                    <div className="flex items-center text-amber-500">
+                      {Array.from({ length: f.rating }).map((_, i) => <Star key={i} className="w-3.5 h-3.5 fill-current" />)}
+                    </div>
+                  </td>
+                  <td className="p-4 text-slate-605 max-w-xs truncate">{f.comment}</td>
+                  <td className="p-4 text-slate-550">{f.type}</td>
+                  <td className="p-4 text-slate-500">{f.date}</td>
+                  <td className="p-4 text-center">
+                    <div className="flex items-center justify-center gap-2 text-slate-405">
+                      <button className="hover:text-blue-600"><Eye className="w-3.5 h-3.5" /></button>
+                      <button className="hover:text-slate-600"><MoreVertical className="w-3.5 h-3.5" /></button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
+    </>
+  );
+
+  return (
+    <div className="space-y-6 text-slate-800">
+      {activeTab === 'overview' && renderOverview()}
+      {activeTab === 'list' && renderList()}
+      {activeTab === 'queries' && renderQueries()}
+      {activeTab === 'complaints' && renderComplaints()}
+      {activeTab === 'services' && renderServices()}
+      {activeTab === 'feedback' && renderFeedback()}
 
       {/* Creation Modal Form */}
       {showModal && (
@@ -683,7 +898,7 @@ const VendorManagement = () => {
           <div className="bg-white border border-slate-200 rounded-xl max-w-md w-full p-6 shadow-2xl space-y-4">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <h3 className="text-base font-bold text-slate-800">Add Vendor</h3>
-              <button onClick={() => setShowModal(false)} className="text-slate-400 hover:text-slate-600">
+              <button onClick={() => setShowModal(false)} className="text-slate-400 hover:text-slate-655">
                 <X className="w-5 h-5" />
               </button>
             </div>

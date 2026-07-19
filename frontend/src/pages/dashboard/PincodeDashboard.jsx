@@ -145,6 +145,90 @@ const PincodeDashboard = () => {
 
       </div>
 
+      {/* Daily Target Tracker & GPS Visit Proof Panel */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        {/* Target Progress Card */}
+        <div className="lg:col-span-2 bg-white border border-slate-200/80 rounded-xl p-5 shadow-sm space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-base font-bold text-slate-800 flex items-center gap-2">
+              <ClipboardList className="w-5 h-5 text-blue-600" /> Daily Target & Field Progress
+            </h3>
+            <span className="bg-emerald-50 text-emerald-600 px-2 py-0.5 rounded text-[10px] font-bold uppercase">Required: 20 Visits/Day</span>
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
+            <div className="bg-slate-50 border border-slate-150 p-3 rounded-lg">
+              <span className="block text-slate-400 text-[10px] uppercase font-bold">Daily Target</span>
+              <span className="block text-slate-800 text-xl font-black mt-1">20</span>
+            </div>
+            <div className="bg-slate-50 border border-slate-150 p-3 rounded-lg">
+              <span className="block text-slate-400 text-[10px] uppercase font-bold">Daily Visited</span>
+              <span className="block text-slate-800 text-xl font-black mt-1">{todayVisits}</span>
+            </div>
+            <div className="bg-slate-50 border border-slate-150 p-3 rounded-lg">
+              <span className="block text-slate-400 text-[10px] uppercase font-bold">Remaining Target</span>
+              <span className="block text-slate-800 text-xl font-black mt-1">{Math.max(0, 20 - todayVisits)}</span>
+            </div>
+            <div className="bg-blue-50 border border-blue-100 p-3 rounded-lg">
+              <span className="block text-blue-600 text-[10px] uppercase font-bold">Completed Target</span>
+              <span className="block text-blue-700 text-xl font-black mt-1">{Math.round((todayVisits / 20) * 100)}%</span>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <div className="flex items-center justify-between text-xs font-bold text-slate-500">
+              <span>Overall Progress</span>
+              <span>{todayVisits} / 20 Shops</span>
+            </div>
+            <div className="bg-slate-100 h-2.5 rounded-full overflow-hidden">
+              <div
+                className="bg-blue-600 h-full rounded-full transition-all duration-300"
+                style={{ width: `${(todayVisits / 20) * 100}%` }}
+              ></div>
+            </div>
+          </div>
+        </div>
+
+        {/* GPS Photo Visit Proof */}
+        <div className="bg-white border border-slate-200/80 rounded-xl p-5 shadow-sm space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-base font-bold text-slate-800 flex items-center gap-2">
+              <MapPin className="w-5 h-5 text-emerald-600" /> GPS & Photo Visit Proof
+            </h3>
+            <span className="bg-emerald-50 text-emerald-600 px-2 py-0.5 rounded text-[10px] font-bold uppercase">Active</span>
+          </div>
+
+          <div className="bg-slate-50 border border-slate-150 rounded-lg p-3 space-y-2 text-xs font-bold text-slate-500 font-sans">
+            <div className="flex justify-between">
+              <span>GPS Status:</span>
+              <span className="text-emerald-600">Connected</span>
+            </div>
+            <div className="flex justify-between">
+              <span>Current Coordinates:</span>
+              <span className="text-slate-700">11.0168° N, 76.9558° E</span>
+            </div>
+            <div className="flex justify-between">
+              <span>Timestamp:</span>
+              <span className="text-slate-700">19-07-2026 03:15 PM</span>
+            </div>
+          </div>
+
+          {/* Form upload before/after photos */}
+          <div className="grid grid-cols-2 gap-2 text-center text-[10px] font-bold text-slate-500">
+            <label className="border-2 border-dashed border-slate-250 hover:border-blue-500 rounded-lg p-2.5 cursor-pointer transition">
+              <Upload className="w-4 h-4 mx-auto mb-1 text-slate-400" />
+              <span>Before Photo</span>
+            </label>
+            <label className="border-2 border-dashed border-slate-250 hover:border-blue-500 rounded-lg p-2.5 cursor-pointer transition">
+              <Upload className="w-4 h-4 mx-auto mb-1 text-slate-400" />
+              <span>After Photo</span>
+            </label>
+          </div>
+        </div>
+
+      </div>
+
       {/* Timeline & verification Status Row */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
