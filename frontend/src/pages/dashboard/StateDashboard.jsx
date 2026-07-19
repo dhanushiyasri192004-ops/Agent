@@ -128,98 +128,93 @@ const StateDashboard = () => {
               <option value="Karnataka">Karnataka</option>
             </select>
           </div>
-          <div className="w-10 h-10 rounded-lg bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600">
-            <svg className="w-6 h-6" viewBox="0 0 100 100" fill="currentColor">
-              <path d="M 40 10 Q 55 12 60 25 Q 70 30 75 45 Q 80 60 70 75 Q 60 85 50 90 Q 30 75 25 60 Q 20 40 35 25 Z" />
-            </svg>
-          </div>
         </div>
       </div>
 
       {/* Grid of 7 Solid Colored Stats Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
         
         {/* Total Divisions */}
-        <div className="bg-[#1e40af] text-white rounded-xl p-4 shadow-sm flex flex-col justify-between h-28 relative overflow-hidden">
+        <div className="bg-[#1e40af] text-white rounded-xl p-5 shadow-md flex flex-col justify-between h-32 relative overflow-hidden">
           <div>
-            <p className="text-xs uppercase font-extrabold text-blue-200 tracking-wider">Total Divisions</p>
-            <p className="text-3xl font-black mt-1">12</p>
+            <p className="text-[10px] uppercase font-black text-blue-200 tracking-widest opacity-90">Total Divisions</p>
+            <p className="text-2xl font-black mt-1">12</p>
           </div>
           <div className="flex justify-between items-center mt-2">
-            <span className="text-xs text-blue-200 font-bold hover:underline cursor-pointer">View all divisions</span>
-            <Compass className="w-5 h-5 opacity-40 absolute bottom-3 right-3" />
+            <span className="text-[10px] text-blue-200 font-bold hover:underline cursor-pointer">View all divisions</span>
+            <Compass className="w-5 h-5 opacity-40 absolute bottom-4 right-4" />
           </div>
         </div>
 
         {/* Total Districts */}
-        <div className="bg-[#065f46] text-white rounded-xl p-4 shadow-sm flex flex-col justify-between h-28 relative overflow-hidden">
+        <div className="bg-[#065f46] text-white rounded-xl p-5 shadow-md flex flex-col justify-between h-32 relative overflow-hidden">
           <div>
-            <p className="text-xs uppercase font-extrabold text-emerald-200 tracking-wider">Total Districts</p>
-            <p className="text-3xl font-black mt-1">106</p>
+            <p className="text-[10px] uppercase font-black text-emerald-200 tracking-widest opacity-90">Total Districts</p>
+            <p className="text-2xl font-black mt-1">106</p>
           </div>
           <div className="flex justify-between items-center mt-2">
-            <span className="text-xs text-emerald-200 font-bold hover:underline cursor-pointer">View all districts</span>
-            <Users className="w-5 h-5 opacity-40 absolute bottom-3 right-3" />
+            <span className="text-[10px] text-emerald-200 font-bold hover:underline cursor-pointer">View all districts</span>
+            <Users className="w-5 h-5 opacity-40 absolute bottom-4 right-4" />
           </div>
         </div>
 
         {/* Total Pincode Agents */}
-        <div className="bg-[#6b21a8] text-white rounded-xl p-4 shadow-sm flex flex-col justify-between h-28 relative overflow-hidden">
+        <div className="bg-[#6b21a8] text-white rounded-xl p-5 shadow-md flex flex-col justify-between h-32 relative overflow-hidden">
           <div>
-            <p className="text-xs uppercase font-extrabold text-purple-200 tracking-wider">Pincode Agents</p>
-            <p className="text-3xl font-black mt-1">4,328</p>
+            <p className="text-[10px] uppercase font-black text-purple-200 tracking-widest opacity-90">Pincode Agents</p>
+            <p className="text-2xl font-black mt-1">4,328</p>
           </div>
           <div className="flex justify-between items-center mt-2">
-            <span className="text-xs text-purple-200 font-bold hover:underline cursor-pointer">View all agents</span>
-            <MapPin className="w-5 h-5 opacity-40 absolute bottom-3 right-3" />
+            <span className="text-[10px] text-purple-200 font-bold hover:underline cursor-pointer">View all agents</span>
+            <MapPin className="w-5 h-5 opacity-40 absolute bottom-4 right-4" />
           </div>
         </div>
 
         {/* Total Vendors */}
-        <div className="bg-[#c2410c] text-white rounded-xl p-4 shadow-sm flex flex-col justify-between h-28 relative overflow-hidden">
+        <div className="bg-[#c2410c] text-white rounded-xl p-5 shadow-md flex flex-col justify-between h-32 relative overflow-hidden">
           <div>
-            <p className="text-xs uppercase font-extrabold text-orange-200 tracking-wider">Total Vendors</p>
+            <p className="text-[10px] uppercase font-black text-orange-200 tracking-widest opacity-90">Total Vendors</p>
             <p className="text-2xl font-black mt-1">8,75,231</p>
           </div>
           <div className="flex justify-between items-center mt-2">
-            <span className="text-xs text-orange-200 font-bold hover:underline cursor-pointer">View vendors</span>
-            <Users className="w-5 h-5 opacity-40 absolute bottom-3 right-3" />
+            <span className="text-[10px] text-orange-200 font-bold hover:underline cursor-pointer">View vendors</span>
+            <Users className="w-5 h-5 opacity-40 absolute bottom-4 right-4" />
           </div>
         </div>
 
         {/* Active Projects */}
-        <div className="bg-[#0f766e] text-white rounded-xl p-4 shadow-sm flex flex-col justify-between h-28 relative overflow-hidden">
+        <div className="bg-[#0f766e] text-white rounded-xl p-5 shadow-md flex flex-col justify-between h-32 relative overflow-hidden">
           <div>
-            <p className="text-xs uppercase font-extrabold text-teal-200 tracking-wider">Active Projects</p>
-            <p className="text-3xl font-black mt-1">28</p>
+            <p className="text-[10px] uppercase font-black text-teal-200 tracking-widest opacity-90">Active Projects</p>
+            <p className="text-2xl font-black mt-1">28</p>
           </div>
           <div className="flex justify-between items-center mt-2">
-            <span className="text-xs text-teal-200 font-bold hover:underline cursor-pointer">View projects</span>
-            <Briefcase className="w-5 h-5 opacity-40 absolute bottom-3 right-3" />
+            <span className="text-[10px] text-teal-200 font-bold hover:underline cursor-pointer">View projects</span>
+            <Briefcase className="w-5 h-5 opacity-40 absolute bottom-4 right-4" />
           </div>
         </div>
 
         {/* Total Revenue */}
-        <div className="bg-[#be123c] text-white rounded-xl p-4 shadow-sm flex flex-col justify-between h-28 relative overflow-hidden">
+        <div className="bg-[#be123c] text-white rounded-xl p-5 shadow-md flex flex-col justify-between h-32 relative overflow-hidden">
           <div>
-            <p className="text-xs uppercase font-extrabold text-rose-200 tracking-wider">Total Revenue</p>
-            <p className="text-lg font-black mt-1">₹ 48.76 Cr</p>
+            <p className="text-[10px] uppercase font-black text-rose-200 tracking-widest opacity-90">Total Revenue</p>
+            <p className="text-2xl font-black mt-1">₹ 48.76 Cr</p>
           </div>
           <div className="flex justify-between items-center mt-2">
-            <span className="text-xs text-rose-200 font-bold hover:underline cursor-pointer">View revenue</span>
-            <span className="w-5 h-5 flex items-center justify-center font-bold text-base opacity-40 absolute bottom-3 right-3">₹</span>
+            <span className="text-[10px] text-rose-200 font-bold hover:underline cursor-pointer">View revenue</span>
+            <span className="w-5 h-5 flex items-center justify-center font-bold text-base opacity-40 absolute bottom-4 right-4">₹</span>
           </div>
         </div>
 
         {/* Pending Approvals */}
-        <div className="bg-[#b45309] text-white rounded-xl p-4 shadow-sm flex flex-col justify-between h-28 relative overflow-hidden">
+        <div className="bg-[#b45309] text-white rounded-xl p-5 shadow-md flex flex-col justify-between h-32 relative overflow-hidden">
           <div>
-            <p className="text-xs uppercase font-extrabold text-amber-200 tracking-wider">Pending Approvals</p>
-            <p className="text-3xl font-black mt-1">23</p>
+            <p className="text-[10px] uppercase font-black text-amber-200 tracking-widest opacity-90">Pending Approvals</p>
+            <p className="text-2xl font-black mt-1">23</p>
           </div>
           <div className="flex justify-between items-center mt-2">
-            <span className="text-xs text-amber-200 font-bold hover:underline cursor-pointer">View approvals</span>
-            <Hourglass className="w-5 h-5 opacity-40 absolute bottom-3 right-3" />
+            <span className="text-[10px] text-amber-200 font-bold hover:underline cursor-pointer">View approvals</span>
+            <Hourglass className="w-5 h-5 opacity-40 absolute bottom-4 right-4" />
           </div>
         </div>
 
