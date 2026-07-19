@@ -110,16 +110,10 @@ const StateDashboard = () => {
         </div>
         <div className="flex items-center gap-3 self-end sm:self-auto">
           <div className="flex items-center gap-2">
-            <span className="text-sm font-semibold text-slate-500">Select State</span>
-            <select
-              value={selectedState}
-              onChange={(e) => setSelectedState(e.target.value)}
-              className="bg-white border border-slate-200 rounded-lg px-3 py-1.5 text-sm font-bold text-slate-700 focus:outline-none"
-            >
-              <option value="Tamil Nadu">Tamil Nadu</option>
-              <option value="Kerala">Kerala</option>
-              <option value="Karnataka">Karnataka</option>
-            </select>
+            <span className="text-sm font-semibold text-slate-500">State</span>
+            <span className="bg-white border border-slate-200 rounded-lg px-3 py-1.5 text-sm font-bold text-slate-700 select-none">
+              {user?.agentInfo?.state || 'Tamil Nadu'}
+            </span>
           </div>
         </div>
       </div>
