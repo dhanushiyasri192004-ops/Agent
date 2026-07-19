@@ -29,8 +29,7 @@ import {
   Megaphone,
   Bell,
   Settings,
-  Link as LinkIcon,
-  UserPlus
+  Link as LinkIcon
 } from 'lucide-react';
 import api from '../../services/api.js';
 
@@ -91,12 +90,6 @@ const StateDashboard = () => {
     { name: 'Vijayalakshmi', role: 'Pincode Agent', location: '600055', time: '2 Days Ago', status: 'Pending' },
   ];
 
-  const govProjects = [
-    { name: 'Drinking Water Supply Project', dept: 'Rural Development Department', progress: 60, status: 'In Progress', color: 'bg-blue-500' },
-    { name: 'School Infrastructure Development', dept: 'Education Department', progress: 45, status: 'In Progress', color: 'bg-blue-500' },
-    { name: 'Health & Wellness Center', dept: 'Health Department', progress: 25, status: 'Planning', color: 'bg-amber-500' },
-    { name: 'Smart Village Project', dept: 'IT Department', progress: 70, status: 'In Progress', color: 'bg-blue-500' },
-  ];
 
   const topDivisions = [
     { name: 'Coimbatore Division', amount: '8.76 Cr', change: '+ 18.5%' },
@@ -321,42 +314,11 @@ const StateDashboard = () => {
 
       </div>
 
-      {/* Row 2: Government Projects, Revenue Overview, Leaders */}
+      {/* Row 2: Revenue Overview, Leaders */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
-        {/* Government Projects */}
-        <div className="bg-white border border-slate-200/80 rounded-xl p-5 shadow-sm flex flex-col justify-between">
-          <div>
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-base font-bold text-slate-800">Government Projects</h3>
-              <span className="text-xs text-blue-600 hover:underline font-bold cursor-pointer">View all</span>
-            </div>
-            <div className="space-y-4">
-              {govProjects.map((p, idx) => (
-                <div key={idx} className="space-y-1.5">
-                  <div className="flex items-center justify-between text-xs">
-                    <div>
-                      <h4 className="font-bold text-slate-800">{p.name}</h4>
-                      <p className="text-xs text-slate-400">{p.dept}</p>
-                    </div>
-                    <span className={`px-2.5 py-0.5 rounded text-xs font-bold ${p.status === 'In Progress' ? 'bg-blue-50 text-blue-600' : 'bg-amber-50 text-amber-600'}`}>
-                      {p.status}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="flex-1 bg-slate-100 h-1.5 rounded-full overflow-hidden">
-                      <div className={`h-full rounded-full ${p.color}`} style={{ width: `${p.progress}%` }}></div>
-                    </div>
-                    <span className="text-xs font-bold text-slate-600">{p.progress}%</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-
         {/* Revenue Overview (Bar chart) */}
-        <div className="bg-white border border-slate-200/80 rounded-xl p-5 shadow-sm flex flex-col">
+        <div className="lg:col-span-2 bg-white border border-slate-200/80 rounded-xl p-5 shadow-sm flex flex-col">
           <div className="flex items-center justify-between mb-4">
             <div>
               <h3 className="text-base font-bold text-slate-800">Revenue Overview</h3>
@@ -453,10 +415,6 @@ const StateDashboard = () => {
         <div className="bg-white border border-slate-200/80 rounded-xl p-5 shadow-sm flex flex-col justify-between">
           <h3 className="text-base font-bold text-slate-800 mb-4">Quick Actions</h3>
           <div className="grid grid-cols-2 gap-3 flex-1">
-            <button className="bg-slate-50 hover:bg-slate-100/80 border border-slate-100 rounded-xl p-4 flex flex-col items-center justify-center text-center transition gap-2 group">
-              <UserPlus className="w-5.5 h-5.5 text-blue-600 group-hover:scale-110 transition duration-200" />
-              <span className="text-xs font-bold text-slate-700 uppercase leading-none mt-1">Add Divisional Agent</span>
-            </button>
             <button className="bg-slate-50 hover:bg-slate-100/80 border border-slate-100 rounded-xl p-4 flex flex-col items-center justify-center text-center transition gap-2 group">
               <FileCheck className="w-5.5 h-5.5 text-emerald-600 group-hover:scale-110 transition duration-200" />
               <span className="text-xs font-bold text-slate-700 uppercase leading-none mt-1">Approve Agents</span>
