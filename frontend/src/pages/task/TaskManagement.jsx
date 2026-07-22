@@ -130,12 +130,42 @@ const TaskManagement = () => {
           ))}
       </div>
 
+      {/* Hierarchical Target Cascade Workflow */}
+      <div className="bg-white border border-slate-200/80 rounded-xl p-5 shadow-sm space-y-4">
+        <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+          <div>
+            <h3 className="text-base font-bold text-slate-800">Hierarchical Target Cascade Workflow</h3>
+            <p className="text-xs text-slate-500 font-semibold mt-0.5">Cascade targets down the hierarchy: Admin → State → District → Division → Pincode Agent.</p>
+          </div>
+          <span className="text-xs font-bold text-forge-gold bg-amber-50 border border-forge-gold/30 px-2.5 py-1 rounded">RBAC Scoped</span>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+          {[
+            { level: '1. Admin', title: 'Sets State Target', assignTo: 'State Agent', target: '500 Shops / Mo' },
+            { level: '2. State Agent', title: 'Distributes to District', assignTo: 'District Agents', target: '100 Shops / Dist' },
+            { level: '3. District Agent', title: 'Distributes to Division', assignTo: 'Divisional Agents', target: '25 Shops / Div' },
+            { level: '4. Divisional Agent', title: 'Distributes to Pincode', assignTo: 'Pincode Agents', target: '5 Shops / Pin' },
+            { level: '5. Pincode Agent', title: 'Executes Registrations', assignTo: 'Local Shops', target: 'On-Field Visits' },
+          ].map((step, idx) => (
+            <div key={idx} className="bg-slate-50 border border-slate-200/60 p-3.5 rounded-xl space-y-1.5 text-xs">
+              <span className="text-[10px] font-black text-forge-gold uppercase tracking-wider block">{step.level}</span>
+              <h4 className="font-bold text-slate-800">{step.title}</h4>
+              <p className="text-[11px] text-slate-500 font-medium">Recipient: <strong className="text-slate-700">{step.assignTo}</strong></p>
+              <span className="inline-block bg-white border border-slate-200 text-slate-700 font-bold text-[10px] px-2 py-0.5 rounded shadow-2xs">
+                {step.target}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+
       {/* Create Task Modal Overlay */}
       {showModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 backdrop-blur-sm">
           <div className="bg-white border border-slate-200 rounded-xl max-w-md w-full p-6 shadow-2xl space-y-4 text-xs font-bold text-slate-500 uppercase tracking-wider">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <h3 className="text-base font-bold text-slate-800 normal-case">Create New Task</h3>
+              <h3 className="text-base font-bold text-slate-800 normal-case">Create New Task / Target</h3>
               <button onClick={() => setShowModal(false)} className="text-slate-400 hover:text-slate-600">
                 <X className="w-5 h-5" />
               </button>
@@ -143,11 +173,11 @@ const TaskManagement = () => {
 
             <form onSubmit={handleCreateTask} className="space-y-4">
               <div>
-                <label className="block mb-1.5">Task Title</label>
+                <label className="block mb-1.5">Task Title / Target Goal</label>
                 <input
                   type="text"
                   required
-                  placeholder="e.g. Audit Divisional Registers"
+                  placeholder="e.g. Register 25 Shops in Salem East Division"
                   value={taskTitle}
                   onChange={(e) => setTaskTitle(e.target.value)}
                   className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-slate-700 outline-none focus:border-blue-500 font-medium normal-case"
@@ -168,7 +198,7 @@ const TaskManagement = () => {
                   </select>
                 </div>
                 <div>
-                  <label className="block mb-1.5">Assign To Tab</label>
+                  <label className="block mb-1.5">Target Level</label>
                   <select
                     value={taskTarget}
                     onChange={(e) => setTaskTarget(e.target.value)}
@@ -182,17 +212,17 @@ const TaskManagement = () => {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block mb-1.5">From / Issuer</label>
+                  <label className="block mb-1.5">Issuer / Authority</label>
                   <input
                     type="text"
-                    placeholder="e.g. System Control"
+                    placeholder="e.g. District Agent"
                     value={taskFrom}
                     onChange={(e) => setTaskFrom(e.target.value)}
                     className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-slate-700 outline-none focus:border-blue-500 font-medium normal-case"
                   />
                 </div>
                 <div>
-                  <label className="block mb-1.5">Total Steps / Target</label>
+                  <label className="block mb-1.5">Target Quota (Shops)</label>
                   <input
                     type="number"
                     min="1"
@@ -204,7 +234,7 @@ const TaskManagement = () => {
               </div>
 
               <div>
-                <label className="block mb-1.5">Due Date</label>
+                <label className="block mb-1.5">Target Deadline</label>
                 <input
                   type="date"
                   value={taskDue}
@@ -217,7 +247,7 @@ const TaskManagement = () => {
                 type="submit"
                 className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold p-3 rounded-lg shadow-md transition uppercase tracking-wider"
               >
-                Publish Task
+                Publish & Distribute Target
               </button>
             </form>
           </div>
