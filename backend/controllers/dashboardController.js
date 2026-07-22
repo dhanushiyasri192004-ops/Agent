@@ -43,10 +43,10 @@ export const getDashboardMetrics = async (req, res, next) => {
       ]);
 
       metrics = {
-        divisionsCount: divisionsCount || 8,
-        districtsCount: districtsCount || 38,
-        pincodeAgentsCount: pincodeAgentsCount || 1250,
-        shopsRegisteredCount: shopsRegistered || 2845,
+        divisionsCount: divisionsCount,
+        districtsCount: districtsCount,
+        pincodeAgentsCount: pincodeAgentsCount,
+        shopsRegisteredCount: shopsRegistered,
         totalShops: shopsRegistered,
         activeShops,
         pendingReportsCount,
@@ -66,59 +66,16 @@ export const getDashboardMetrics = async (req, res, next) => {
         throw new Error('Divisional Agent profile not found');
       }
 
-      const { state, division } = agentProfile;
+      const { state, district, division } = agentProfile;
 
-      const subAgents = await Agent.find({ state, division });
-      const districtsCount = new Set(subAgents.filter(a => a.district).map(a => a.district)).size;
+      const subAgents = await Agent.find({ state, district, division });
       const pincodeAgentsCount = subAgents.filter(a => a.role === 'Pincode Agent').length;
-      const districtAgentsCount = subAgents.filter(a => a.role === 'District Agent').length;
 
-      const shopsRegistered = await Shop.countDocuments({ state, division });
+      const shopsRegistered = await Shop.countDocuments({ state, district, division });
       const pendingReportsCount = await Report.countDocuments({ assignedTo: req.user._id, status: 'Pending' });
 
-      const districtStats = await Shop.aggregate([
-        { $match: { state, division } },
-        { $group: { _id: '$district', count: { $sum: 1 } } }
-      ]);
-
-      const subAgentIds = subAgents.map(a => a.user);
-      const recentActivities = await ActivityLog.find({ user: { $in: [...subAgentIds, req.user._id] } })
-        .populate('user', 'email role')
-        .sort({ createdAt: -1 })
-        .limit(10);
-
-      metrics = {
-        districtsCount: districtsCount || 6,
-        districtAgentsCount: districtAgentsCount || 45,
-        pincodeAgentsCount: pincodeAgentsCount || 320,
-        shopsRegisteredCount: shopsRegistered || 820,
-        pendingReportsCount,
-        agentDistribution: {
-          districtAgents: districtAgentsCount,
-          pincodeAgents: pincodeAgentsCount,
-        },
-        districtPerformance: districtStats.map(d => ({ name: d._id, value: d.count })),
-        recentActivities,
-      };
-
-    } else if (role === 'District Agent') {
-      const agentProfile = await Agent.findOne({ user: req.user._id });
-      if (!agentProfile) {
-        res.status(404);
-        throw new Error('District Agent profile not found');
-      }
-
-      const { state, division, district } = agentProfile;
-
-      const subAgents = await Agent.find({ state, division, district, role: 'Pincode Agent' });
-      const pincodesCount = new Set(subAgents.map(a => a.pincode)).size;
-      const pincodeAgentsCount = subAgents.length;
-
-      const shopsRegistered = await Shop.countDocuments({ state, division, district });
-      const reportsSubmitted = await Report.countDocuments({ assignedTo: req.user._id });
-
       const pincodeStats = await Shop.aggregate([
-        { $match: { state, division, district } },
+        { $match: { state, district, division } },
         { $group: { _id: '$pincode', count: { $sum: 1 } } }
       ]);
 
@@ -129,11 +86,56 @@ export const getDashboardMetrics = async (req, res, next) => {
         .limit(10);
 
       metrics = {
-        pincodesCount: pincodesCount || 24,
-        pincodeAgentsCount: pincodeAgentsCount || 85,
-        shopsRegisteredCount: shopsRegistered || 210,
-        reportsSubmittedCount: reportsSubmitted || 18,
-        pincodePerformance: pincodeStats.map(p => ({ name: p._id, value: p.count })),
+        districtsCount: 1,
+        districtAgentsCount: 1,
+        pincodeAgentsCount: pincodeAgentsCount,
+        shopsRegisteredCount: shopsRegistered,
+        pendingReportsCount,
+        agentDistribution: {
+          districtAgents: 1,
+          pincodeAgents: pincodeAgentsCount,
+        },
+        districtPerformance: pincodeStats.map(p => ({ name: p._id, value: p.count })),
+        recentActivities,
+      };
+
+    } else if (role === 'District Agent') {
+      const agentProfile = await Agent.findOne({ user: req.user._id });
+      const resolvedDistrict = agentProfile?.district || req.user.district || 'Salem District';
+      const resolvedState = agentProfile?.state || req.user.state || 'Tamil Nadu';
+
+      const districtRegex = new RegExp(resolvedDistrict.replace(/District/i, '').trim(), 'i');
+
+      const subAgents = await Agent.find({
+        $or: [{ district: districtRegex }, { state: resolvedState }]
+      });
+      
+      const districtPincodeAgents = subAgents.filter(a => a.role === 'Pincode Agent' && (a.district ? districtRegex.test(a.district) : true));
+      const districtDivisionalAgents = subAgents.filter(a => a.role === 'Divisional Agent' && (a.district ? districtRegex.test(a.district) : true));
+
+      const districtShops = await Shop.find({ district: districtRegex });
+      const shopsRegistered = districtShops.length;
+      const reportsSubmittedCount = await Report.countDocuments({ createdBy: { $in: subAgents.map(a => a.user) } });
+
+      const pincodeStats = await Shop.aggregate([
+        { $match: { district: districtRegex } },
+        { $group: { _id: '$pincode', count: { $sum: 1 } } }
+      ]);
+
+      const subAgentIds = subAgents.map(a => a.user);
+      const recentActivities = await ActivityLog.find({ user: { $in: [...subAgentIds, req.user._id] } })
+        .populate('user', 'email role')
+        .sort({ createdAt: -1 })
+        .limit(10);
+
+      metrics = {
+        district: resolvedDistrict,
+        pincodesCount: pincodeStats.length,
+        pincodeAgentsCount: districtPincodeAgents.length,
+        divisionalAgentsCount: districtDivisionalAgents.length,
+        shopsRegisteredCount: shopsRegistered,
+        reportsSubmittedCount: reportsSubmittedCount,
+        pincodeOverview: pincodeStats.map(p => ({ pin: p._id || 'General', shops: p.count })),
         recentActivities,
       };
 
@@ -177,7 +179,7 @@ export const getDashboardMetrics = async (req, res, next) => {
         .limit(5);
 
       metrics = {
-        todayVisits: todayVisits || 6,
+        todayVisits: todayVisits,
         registeredShopsCount,
         pendingVerificationCount,
         reportsSubmittedCount,

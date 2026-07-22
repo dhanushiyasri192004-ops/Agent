@@ -4,9 +4,9 @@ import ActivityLog from '../models/ActivityLog.js';
 
 const getSubRole = (role) => {
   if (role === 'Admin') return 'State Agent';
-  if (role === 'State Agent') return 'Divisional Agent';
-  if (role === 'Divisional Agent') return 'District Agent';
-  if (role === 'District Agent') return 'Pincode Agent';
+  if (role === 'State Agent') return 'District Agent';
+  if (role === 'District Agent') return 'Divisional Agent';
+  if (role === 'Divisional Agent') return 'Pincode Agent';
   return null;
 };
 
@@ -40,14 +40,14 @@ export const createAgent = async (req, res, next) => {
         throw new Error(`Geographical mismatch: You are restricted to state "${parentAgent.state}".`);
       }
 
-      if (creatorRole === 'Divisional Agent' && parentAgent.division !== division) {
-        res.status(400);
-        throw new Error(`Geographical mismatch: You are restricted to division "${parentAgent.division}".`);
-      }
-
       if (creatorRole === 'District Agent' && parentAgent.district !== district) {
         res.status(400);
         throw new Error(`Geographical mismatch: You are restricted to district "${parentAgent.district}".`);
+      }
+
+      if (creatorRole === 'Divisional Agent' && parentAgent.division !== division) {
+        res.status(400);
+        throw new Error(`Geographical mismatch: You are restricted to division "${parentAgent.division}".`);
       }
     }
 
@@ -103,17 +103,17 @@ export const getMySubAgents = async (req, res, next) => {
 
       if (creatorRole === 'State Agent') {
         query = { state: parentAgent.state, role: { $ne: 'State Agent' } };
-      } else if (creatorRole === 'Divisional Agent') {
-        query = {
-          state: parentAgent.state,
-          division: parentAgent.division,
-          role: { $in: ['District Agent', 'Pincode Agent'] },
-        };
       } else if (creatorRole === 'District Agent') {
         query = {
           state: parentAgent.state,
-          division: parentAgent.division,
           district: parentAgent.district,
+          role: { $in: ['Divisional Agent', 'Pincode Agent'] },
+        };
+      } else if (creatorRole === 'Divisional Agent') {
+        query = {
+          state: parentAgent.state,
+          district: parentAgent.district,
+          division: parentAgent.division,
           role: 'Pincode Agent',
         };
       } else {

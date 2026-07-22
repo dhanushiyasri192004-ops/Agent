@@ -1,16 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
-import { Store, Upload, Check, ShieldAlert } from 'lucide-react';
+import { Upload, Check, ShieldAlert } from 'lucide-react';
 import api from '../../services/api.js';
 
 const ShopRegistration = () => {
   const { user } = useSelector((state) => state.auth);
+  const [category, setCategory] = useState('');
+  const [subCategory, setSubCategory] = useState('');
   const [name, setName] = useState('');
-  const [ownerName, setOwnerName] = useState('');
-  const [email, setEmail] = useState('');
-  const [phone, setPhone] = useState('');
-  const [address, setAddress] = useState('');
   const [pincode, setPincode] = useState('');
+  const [address, setAddress] = useState('');
+  const [licenseNumber, setLicenseNumber] = useState('');
   const [documentFile, setDocumentFile] = useState(null);
   
   const [loading, setLoading] = useState(false);
@@ -39,46 +39,31 @@ const ShopRegistration = () => {
       return;
     }
 
-    if (user?.agentInfo?.pincode && pincode !== user.agentInfo.pincode) {
-      setError(`You are restricted to register shops in your assigned pincode: ${user.agentInfo.pincode}`);
-      setLoading(false);
-      return;
-    }
-
-    if (!documentFile) {
-      setError('Please upload a shop document/license');
-      setLoading(false);
-      return;
-    }
-
     const formData = new FormData();
     formData.append('name', name);
-    formData.append('ownerName', ownerName);
-    formData.append('email', email);
-    formData.append('phone', phone);
+    formData.append('category', category);
+    formData.append('subCategory', subCategory);
     formData.append('address', address);
     formData.append('pincode', pincode);
-    formData.append('document', documentFile);
+    formData.append('licenseNumber', licenseNumber);
+    if (documentFile) {
+      formData.append('document', documentFile);
+    }
 
     try {
-      await api.post('/api/shops', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
+      await api.post('/api/shops', formData);
 
-      setSuccess('Shop registered successfully and sent for verification!');
+      setSuccess('Business Tie-up request submitted successfully for admin approval!');
+      setCategory('');
+      setSubCategory('');
       setName('');
-      setOwnerName('');
-      setEmail('');
-      setPhone('');
       setAddress('');
+      setLicenseNumber('');
       setDocumentFile(null);
-      // Reset file input element
       const fileInput = document.getElementById('shop-document-file');
       if (fileInput) fileInput.value = '';
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to register shop');
+      setError(err.response?.data?.message || 'Failed to submit business tie-up request');
     } finally {
       setLoading(false);
     }
@@ -86,141 +71,138 @@ const ShopRegistration = () => {
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
-      
-      {/* Title Panel */}
-      <div>
-        <h1 className="text-xl font-bold text-white flex items-center gap-2">
-          <Store className="text-forge-gold w-6 h-6" /> Shop Registration & Tie-Up
-        </h1>
-        <p className="text-xs text-forge-grayText mt-0.5">Register a new shop in your assigned pincode area for business tie-up.</p>
-      </div>
+      <div className="bg-white border border-slate-200 rounded-xl p-8 shadow-sm space-y-6">
+        <div>
+          <h1 className="text-2xl font-black text-[#034ea2]">New Business Tie-up</h1>
+          <p className="text-xs text-slate-500 mt-1 font-semibold">Register a new partner business for admin approval.</p>
+        </div>
 
-      {/* Form */}
-      <div className="bg-forge-dark border border-forge-card/40 rounded-xl p-6 shadow-lg">
-        
         {error && (
-          <div className="mb-6 bg-red-950/50 border border-red-800 text-red-200 text-xs px-4 py-3 rounded-lg flex items-center gap-2">
+          <div className="bg-red-50 border border-red-200 text-red-700 text-xs px-4 py-3 rounded-lg flex items-center gap-2 font-bold">
             <ShieldAlert className="w-5 h-5 text-red-500 shrink-0" />
             <span>{error}</span>
           </div>
         )}
 
         {success && (
-          <div className="mb-6 bg-emerald-950/50 border border-emerald-800 text-emerald-200 text-xs px-4 py-3 rounded-lg flex items-center gap-2">
+          <div className="bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs px-4 py-3 rounded-lg flex items-center gap-2 font-bold">
             <Check className="w-5 h-5 text-emerald-500 shrink-0" />
             <span>{success}</span>
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-5 text-xs font-semibold text-forge-grayText uppercase tracking-wider">
+        <form onSubmit={handleSubmit} className="space-y-4">
           
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-            <div>
-              <label className="block mb-2">Shop/Business Name</label>
-              <input
-                type="text"
-                required
-                placeholder="e.g. Murugan Stores"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                className="w-full bg-forge-card/45 border border-forge-card text-white px-4 py-3 rounded-lg outline-none focus:border-forge-gold"
-              />
-            </div>
-            <div>
-              <label className="block mb-2">Owner Full Name</label>
-              <input
-                type="text"
-                required
-                placeholder="e.g. Murugan Ramasamy"
-                value={ownerName}
-                onChange={(e) => setOwnerName(e.target.value)}
-                className="w-full bg-forge-card/45 border border-forge-card text-white px-4 py-3 rounded-lg outline-none focus:border-forge-gold"
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-            <div>
-              <label className="block mb-2">Email Address</label>
-              <input
-                type="email"
-                required
-                placeholder="owner@gmail.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full bg-forge-card/45 border border-forge-card text-white px-4 py-3 rounded-lg outline-none focus:border-forge-gold lowercase"
-              />
-            </div>
-            <div>
-              <label className="block mb-2">Phone Number</label>
-              <input
-                type="text"
-                required
-                placeholder="9443210987"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                className="w-full bg-forge-card/45 border border-forge-card text-white px-4 py-3 rounded-lg outline-none focus:border-forge-gold"
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
-            <div className="sm:col-span-2">
-              <label className="block mb-2">Shop Address</label>
-              <input
-                type="text"
-                required
-                placeholder="12, Crosscut Road, Gandhipuram"
-                value={address}
-                onChange={(e) => setAddress(e.target.value)}
-                className="w-full bg-forge-card/45 border border-forge-card text-white px-4 py-3 rounded-lg outline-none focus:border-forge-gold"
-              />
-            </div>
-            <div>
-              <label className="block mb-2">Pincode</label>
-              <input
-                type="text"
-                disabled={!!user?.agentInfo?.pincode}
-                required
-                placeholder="641001"
-                value={pincode}
-                onChange={(e) => setPincode(e.target.value)}
-                className="w-full bg-forge-card/25 border border-forge-card/50 text-forge-grayText px-4 py-3 rounded-lg cursor-not-allowed"
-              />
-            </div>
-          </div>
-
+          {/* Select Category */}
           <div>
-            <label className="block mb-2">Shop License/Document Upload (PDF or Image)</label>
-            <div className="relative border-2 border-dashed border-forge-card hover:border-forge-gold/45 rounded-lg p-6 flex flex-col items-center justify-center transition">
+            <label className="block text-xs font-extrabold text-slate-700 mb-1.5">Select Category *</label>
+            <select
+              required
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+              className="w-full border border-slate-300 rounded-lg p-3 text-xs font-bold text-slate-700 outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 bg-white"
+            >
+              <option value="">Choose Category</option>
+              <option value="Grocery">Grocery</option>
+              <option value="Hardware">Hardware</option>
+              <option value="Medical">Medical</option>
+              <option value="Clothing">Clothing</option>
+              <option value="Stationery">Stationery</option>
+              <option value="Electronics">Electronics</option>
+              <option value="Others">Others</option>
+            </select>
+          </div>
+
+          {/* Sub-category / Type */}
+          <div>
+            <input
+              type="text"
+              required
+              placeholder="Sub-category / Type *"
+              value={subCategory}
+              onChange={(e) => setSubCategory(e.target.value)}
+              className="w-full border border-slate-300 rounded-lg p-3 text-xs font-medium text-slate-800 placeholder-slate-400 outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
+            />
+          </div>
+
+          {/* Business Name */}
+          <div>
+            <input
+              type="text"
+              required
+              placeholder="Business Name *"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="w-full border border-slate-300 rounded-lg p-3 text-xs font-medium text-slate-800 placeholder-slate-400 outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
+            />
+          </div>
+
+          {/* Pincode */}
+          <div>
+            <input
+              type="text"
+              required
+              placeholder="Pincode *"
+              value={pincode}
+              onChange={(e) => setPincode(e.target.value)}
+              className="w-full border border-slate-300 rounded-lg p-3 text-xs font-medium text-slate-800 placeholder-slate-400 outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
+            />
+          </div>
+
+          {/* Full Address */}
+          <div>
+            <textarea
+              required
+              rows={2}
+              placeholder="Full Address *"
+              value={address}
+              onChange={(e) => setAddress(e.target.value)}
+              className="w-full border border-slate-300 rounded-lg p-3 text-xs font-medium text-slate-800 placeholder-slate-400 outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
+            />
+          </div>
+
+          {/* Business License Number (Optional) */}
+          <div>
+            <input
+              type="text"
+              placeholder="Business License Number (Optional)"
+              value={licenseNumber}
+              onChange={(e) => setLicenseNumber(e.target.value)}
+              className="w-full border border-slate-300 rounded-lg p-3 text-xs font-medium text-slate-800 placeholder-slate-400 outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
+            />
+          </div>
+
+          {/* Upload Copy / Proof */}
+          <div className="space-y-1.5 pt-1">
+            <label className="block text-xs font-bold text-slate-700">Business License Copy / Proof</label>
+            <label className="border-2 border-dashed border-slate-300 hover:border-blue-600 bg-slate-50/50 rounded-xl p-6 flex flex-col items-center justify-center cursor-pointer transition group">
+              <div className="w-10 h-10 bg-[#034ea2] text-white rounded-full flex items-center justify-center mb-2 shadow-sm">
+                <Upload className="w-5 h-5" />
+              </div>
+              <span className="text-xs font-bold text-[#034ea2]">
+                {documentFile ? documentFile.name : 'Select image from Gallery'}
+              </span>
               <input
                 type="file"
                 id="shop-document-file"
-                required
+                className="hidden"
+                accept="image/*,.pdf"
                 onChange={handleFileChange}
-                accept=".jpeg,.jpg,.png,.pdf"
-                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
               />
-              <Upload className="w-8 h-8 text-forge-gold mb-2" />
-              <p className="text-xs text-white">
-                {documentFile ? documentFile.name : 'Select or drop file here'}
-              </p>
-              <p className="text-[10px] text-forge-grayText mt-1">JPEG, PNG, or PDF up to 5MB</p>
-            </div>
+            </label>
           </div>
 
+          {/* Submit Button */}
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-forge-gold hover:bg-forge-goldHover text-forge-dark font-bold py-3 rounded-lg shadow-lg uppercase tracking-wider text-[11px] mt-4 transition"
+            className="w-full bg-[#034ea2] hover:bg-[#023875] text-white font-bold py-3.5 rounded-lg text-sm shadow-md transition duration-200 mt-4"
           >
-            {loading ? 'Submitting Registration...' : 'Submit Shop Details'}
+            {loading ? 'Submitting Request...' : 'Submit Request'}
           </button>
 
         </form>
-
       </div>
-
     </div>
   );
 };

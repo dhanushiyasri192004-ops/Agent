@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import {
   Users, Plus, ShieldAlert, Check, X, Phone, Mail, Compass, MapPin, Store,
   FileCheck, FileText, Upload, Clock, Settings, Search, Filter, Edit2, Eye,
@@ -13,6 +13,7 @@ import api from '../../services/api.js';
 
 const PincodeAgents = () => {
   const { user } = useSelector((state) => state.auth);
+  const navigate = useNavigate();
   const [dbAgents, setDbAgents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -38,71 +39,7 @@ const PincodeAgents = () => {
   const [success, setSuccess] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
-  // Initial mockup data
-  const initialMockAgents = [
-    {
-      _id: 'PAG001',
-      name: 'Ramesh K',
-      division: 'Chennai Division',
-      district: 'Chennai',
-      pincode: '600001',
-      customers: '2,540',
-      performance: 97,
-      status: 'Active',
-      phone: '9876543230',
-      user: { email: 'ramesh@agent.com' }
-    },
-    {
-      _id: 'PAG002',
-      name: 'Priya M',
-      division: 'Coimbatore Division',
-      district: 'Coimbatore',
-      pincode: '641002',
-      customers: '1,870',
-      performance: 93,
-      status: 'Active',
-      phone: '9876543231',
-      user: { email: 'priya@agent.com' }
-    },
-    {
-      _id: 'PAG003',
-      name: 'Vignesh S',
-      division: 'Madurai Division',
-      district: 'Madurai',
-      pincode: '625001',
-      customers: '1,650',
-      performance: 91,
-      status: 'Active',
-      phone: '9876543232',
-      user: { email: 'vignesh@agent.com' }
-    },
-    {
-      _id: 'PAG004',
-      name: 'Divya K',
-      division: 'Trichy Division',
-      district: 'Trichy',
-      pincode: '620001',
-      customers: '1,320',
-      performance: 88,
-      status: 'Active',
-      phone: '9876543233',
-      user: { email: 'divya@agent.com' }
-    },
-    {
-      _id: 'PAG005',
-      name: 'Rajesh P',
-      division: 'Salem Division',
-      district: 'Salem',
-      pincode: '636001',
-      customers: '1,180',
-      performance: 85,
-      status: 'Inactive',
-      phone: '9876543234',
-      user: { email: 'rajesh_p@agent.com' }
-    }
-  ];
-
-  const [agents, setAgents] = useState(initialMockAgents);
+  const [agents, setAgents] = useState([]);
 
   useEffect(() => {
     fetchAgents();
@@ -116,32 +53,34 @@ const PincodeAgents = () => {
   const fetchAgents = async () => {
     try {
       const response = await api.get('/api/agents');
-      const filtered = response.data.filter(a => a.role === 'Pincode Agent');
+      const assignedDistrict = user?.agentInfo?.district || user?.district || 'Salem District';
+      const districtRegex = new RegExp(assignedDistrict.replace(/District/i, '').trim(), 'i');
+
+      const filtered = response.data.filter(a => {
+        if (a.role !== 'Pincode Agent') return false;
+        if (user?.role === 'District Agent' && a.district && !districtRegex.test(a.district)) return false;
+        return true;
+      });
+
       setDbAgents(filtered);
 
       const formattedDb = filtered.map((agent, index) => ({
         _id: agent._id || `DB_PAG_${index}`,
         name: agent.name,
         division: agent.division || 'Unassigned',
-        district: agent.district || 'Unassigned',
+        district: agent.district || assignedDistrict,
         pincode: agent.pincode || 'Unassigned',
-        customers: '310',
-        performance: 81,
+        customers: '0',
+        performance: 100,
         status: agent.status || 'Active',
         phone: agent.phone || 'N/A',
         user: { email: agent.user?.email || '' }
       }));
 
-      // Combine lists ensuring no duplicates
-      const all = [...initialMockAgents];
-      formattedDb.forEach(db => {
-        if (!all.some(a => a.user.email === db.user.email)) {
-          all.push(db);
-        }
-      });
-      setAgents(all);
+      setAgents(formattedDb);
     } catch (err) {
       console.error('Error fetching agents:', err);
+      setAgents([]);
     } finally {
       setLoading(false);
     }
@@ -252,6 +191,13 @@ const PincodeAgents = () => {
     { name: 'Rejected', value: 158, color: '#ef4444' }
   ];
 
+  const totalAgentsCount = agents.length;
+  const activeAgentsCount = agents.filter(a => a.status === 'Active' || a.status === 'Approved').length;
+  const pendingAgentsCount = agents.filter(a => a.status === 'Pending').length;
+  const inactiveAgentsCount = agents.filter(a => a.status === 'Inactive').length;
+  const totalVendorsCount = agents.reduce((sum, a) => sum + (Number(String(a.customers || 0).replace(/,/g, '')) || 0), 0).toLocaleString();
+  const totalRevenueCount = agents.length > 0 ? `₹ ${(agents.length * 0.8).toFixed(2)} Cr` : '₹ 0 Cr';
+
   return (
     <div className="space-y-6 text-slate-800">
       
@@ -273,8 +219,8 @@ const PincodeAgents = () => {
         <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm flex items-center justify-between">
           <div>
             <p className="text-xs font-bold text-blue-600 uppercase tracking-wider">Total Agents</p>
-            <p className="text-2xl font-black text-slate-800 mt-1.5">2,856</p>
-            <span className="text-xs text-blue-500 hover:underline cursor-pointer font-bold block mt-1">View all agents</span>
+            <p className="text-2xl font-black text-slate-800 mt-1.5">{totalAgentsCount}</p>
+            <span onClick={() => { setSelectedDivision('All Divisions'); setSelectedDistrict('All Districts'); setSelectedPincode('All Pincodes'); setSelectedStatus('All Status'); }} className="text-xs text-blue-500 hover:underline cursor-pointer font-bold block mt-1">View all agents</span>
           </div>
           <div className="w-11 h-11 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600 shrink-0">
             <Compass className="w-5 h-5" />
@@ -285,8 +231,8 @@ const PincodeAgents = () => {
         <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm flex items-center justify-between">
           <div>
             <p className="text-xs font-bold text-emerald-600 uppercase tracking-wider">Active Agents</p>
-            <p className="text-2xl font-black text-slate-800 mt-1.5">2,543</p>
-            <span className="text-xs text-emerald-500 hover:underline cursor-pointer font-bold block mt-1">View active agents</span>
+            <p className="text-2xl font-black text-slate-800 mt-1.5">{activeAgentsCount}</p>
+            <span onClick={() => setSelectedStatus('Active')} className="text-xs text-emerald-500 hover:underline cursor-pointer font-bold block mt-1">View active agents</span>
           </div>
           <div className="w-11 h-11 rounded-lg bg-emerald-50 flex items-center justify-center text-emerald-600 shrink-0">
             <Users className="w-5 h-5" />
@@ -297,8 +243,8 @@ const PincodeAgents = () => {
         <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm flex items-center justify-between">
           <div>
             <p className="text-xs font-bold text-amber-600 uppercase tracking-wider">Pending Approval</p>
-            <p className="text-2xl font-black text-slate-800 mt-1.5">154</p>
-            <span className="text-xs text-amber-500 hover:underline cursor-pointer font-bold block mt-1">View pending</span>
+            <p className="text-2xl font-black text-slate-800 mt-1.5">{pendingAgentsCount}</p>
+            <span onClick={() => navigate('/reports')} className="text-xs text-amber-500 hover:underline cursor-pointer font-bold block mt-1">View pending</span>
           </div>
           <div className="w-11 h-11 rounded-lg bg-amber-50 flex items-center justify-center text-amber-600 shrink-0">
             <Clock className="w-5 h-5" />
@@ -309,8 +255,8 @@ const PincodeAgents = () => {
         <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm flex items-center justify-between">
           <div>
             <p className="text-xs font-bold text-rose-600 uppercase tracking-wider">Inactive Agents</p>
-            <p className="text-2xl font-black text-slate-800 mt-1.5">159</p>
-            <span className="text-xs text-rose-500 hover:underline cursor-pointer font-bold block mt-1">View inactive</span>
+            <p className="text-2xl font-black text-slate-800 mt-1.5">{inactiveAgentsCount}</p>
+            <span onClick={() => setSelectedStatus('Inactive')} className="text-xs text-rose-500 hover:underline cursor-pointer font-bold block mt-1">View inactive</span>
           </div>
           <div className="w-11 h-11 rounded-lg bg-rose-50 flex items-center justify-center text-rose-600 shrink-0">
             <Users className="w-5 h-5" />
@@ -321,8 +267,8 @@ const PincodeAgents = () => {
         <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm flex items-center justify-between">
           <div>
             <p className="text-xs font-bold text-purple-600 uppercase tracking-wider">Vendors Assisted</p>
-            <p className="text-2xl font-black text-slate-800 mt-1.5">1,85,230</p>
-            <span className="text-xs text-purple-500 hover:underline cursor-pointer font-bold block mt-1">View assisted vendors</span>
+            <p className="text-2xl font-black text-slate-800 mt-1.5">{totalVendorsCount}</p>
+            <span onClick={() => navigate('/vendor-management')} className="text-xs text-purple-500 hover:underline cursor-pointer font-bold block mt-1">View assisted vendors</span>
           </div>
           <div className="w-11 h-11 rounded-lg bg-purple-50 flex items-center justify-center text-purple-600 shrink-0">
             <Users className="w-5 h-5" />
@@ -333,8 +279,8 @@ const PincodeAgents = () => {
         <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm flex items-center justify-between">
           <div>
             <p className="text-xs font-bold text-teal-600 uppercase tracking-wider">Total Revenue</p>
-            <p className="text-2xl font-black text-slate-800 mt-1.5">₹ 8.75 Cr</p>
-            <span className="text-xs text-teal-500 hover:underline cursor-pointer font-bold block mt-1">View revenue</span>
+            <p className="text-2xl font-black text-slate-800 mt-1.5">{totalRevenueCount}</p>
+            <span onClick={() => navigate('/performance')} className="text-xs text-teal-500 hover:underline cursor-pointer font-bold block mt-1">View revenue</span>
           </div>
           <div className="w-11 h-11 rounded-lg bg-teal-50 flex items-center justify-center text-teal-600 text-base font-black shrink-0">
             ₹
@@ -367,10 +313,10 @@ const PincodeAgents = () => {
                 onChange={(e) => setSelectedDivision(e.target.value)}
                 className="bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-slate-600 outline-none"
               >
-                <option>All Divisions</option>
-                <option>Chennai Division</option>
-                <option>Coimbatore Division</option>
-                <option>Madurai Division</option>
+                <option value="All Divisions">All Divisions</option>
+                <option value="Chennai Division">Chennai Division</option>
+                <option value="Coimbatore Division">Coimbatore Division</option>
+                <option value="Madurai Division">Madurai Division</option>
               </select>
 
               <select
@@ -378,10 +324,10 @@ const PincodeAgents = () => {
                 onChange={(e) => setSelectedDistrict(e.target.value)}
                 className="bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-slate-600 outline-none"
               >
-                <option>All Districts</option>
-                <option>Chennai</option>
-                <option>Coimbatore</option>
-                <option>Madurai</option>
+                <option value="All Districts">All Districts</option>
+                <option value="Chennai">Chennai</option>
+                <option value="Coimbatore">Coimbatore</option>
+                <option value="Madurai">Madurai</option>
               </select>
 
               <select
@@ -389,12 +335,12 @@ const PincodeAgents = () => {
                 onChange={(e) => setSelectedStatus(e.target.value)}
                 className="bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-slate-600 outline-none"
               >
-                <option>All Status</option>
-                <option>Active</option>
-                <option>Inactive</option>
+                <option value="All Status">All Status</option>
+                <option value="Active">Active</option>
+                <option value="Inactive">Inactive</option>
               </select>
 
-              <button className="flex items-center gap-1.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-600 rounded-lg px-3.5 py-2 transition font-bold">
+              <button onClick={() => navigate('/reports')} className="flex items-center gap-1.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-600 rounded-lg px-3.5 py-2 transition font-bold">
                 <Download className="w-4 h-4 text-slate-500" /> Export
               </button>
             </div>
@@ -509,47 +455,13 @@ const PincodeAgents = () => {
         {/* Right column */}
         <div className="space-y-6">
           
-          {/* Pending Pincode Agent Approvals */}
-          <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="text-base font-bold text-slate-800">Pending Pincode Agent Approvals</h3>
-              <span className="text-xs text-blue-600 hover:underline font-bold cursor-pointer">View All</span>
-            </div>
-            <div className="space-y-3">
-              {[
-                { name: 'Ramesh K', info: 'Chennai Division - Chennai District', date: 'Submitted on 16 May 2025' },
-                { name: 'Priya M', info: 'Coimbatore Division - Coimbatore District', date: 'Submitted on 15 May 2025' },
-                { name: 'Karthikeyan S', info: 'Madurai Division - Madurai District', date: 'Submitted on 14 May 2025' }
-              ].map((p, idx) => (
-                <div key={idx} className="flex items-center justify-between border-b border-slate-50 pb-3 last:border-0 last:pb-0">
-                  <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center font-bold text-slate-600 text-xs">
-                      {p.name.charAt(0)}
-                    </div>
-                    <div>
-                      <h4 className="font-extrabold text-slate-800 text-xs leading-snug">{p.name}</h4>
-                      <p className="text-[10px] text-slate-400 font-semibold">{p.info}</p>
-                      <p className="text-[9px] text-slate-400 font-medium">{p.date}</p>
-                    </div>
-                  </div>
-                  <div className="flex gap-1.5">
-                    <button className="bg-emerald-50 text-emerald-600 border border-emerald-100 rounded px-2.5 py-1 text-[10px] font-bold">
-                      Approve
-                    </button>
-                    <button className="bg-rose-50 text-rose-600 border border-rose-100 rounded px-2.5 py-1 text-[10px] font-bold">
-                      Reject
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
+
 
           {/* Recent Activities */}
           <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="text-base font-bold text-slate-800">Recent Activities</h3>
-              <span className="text-xs text-blue-600 hover:underline font-bold cursor-pointer">View All</span>
+              <span onClick={() => navigate('/notifications')} className="text-xs text-blue-600 hover:underline font-bold cursor-pointer">View All</span>
             </div>
             <div className="space-y-4">
               {[
@@ -580,7 +492,7 @@ const PincodeAgents = () => {
         <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm flex flex-col justify-between">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-base font-bold text-slate-800">Agent by District</h3>
-            <span className="text-xs text-blue-600 font-bold cursor-pointer hover:underline">View All</span>
+            <span onClick={() => navigate('/analytics')} className="text-xs text-blue-600 font-bold cursor-pointer hover:underline">View All</span>
           </div>
           <div className="flex-1 flex flex-col items-center justify-center min-h-[180px] relative">
             <div className="w-32 h-32 rounded-full border-8 border-slate-100 flex items-center justify-center flex-col">
@@ -603,7 +515,7 @@ const PincodeAgents = () => {
         <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm flex flex-col justify-between">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-base font-bold text-slate-800">Vendors Assisted</h3>
-            <span className="text-xs text-emerald-600 font-bold">▲ 15.3%</span>
+            <span onClick={() => navigate('/vendor-management')} className="text-xs text-emerald-600 font-bold cursor-pointer hover:underline">▲ 15.3%</span>
           </div>
           <div className="h-44 w-full">
             <ResponsiveContainer width="100%" height="100%">
@@ -623,7 +535,7 @@ const PincodeAgents = () => {
           <div>
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-base font-bold text-slate-800">Top Performing Pincodes</h3>
-              <span className="text-xs text-blue-600 hover:underline font-bold cursor-pointer">View All</span>
+              <span onClick={() => navigate('/performance')} className="text-xs text-blue-600 hover:underline font-bold cursor-pointer">View All</span>
             </div>
             <div className="space-y-4">
               {[
@@ -651,7 +563,7 @@ const PincodeAgents = () => {
         <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm flex flex-col justify-between">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-base font-bold text-slate-800">Performance Overview</h3>
-            <span className="text-xs text-blue-600 hover:underline font-bold cursor-pointer">View All</span>
+            <span onClick={() => navigate('/performance')} className="text-xs text-blue-600 hover:underline font-bold cursor-pointer">View All</span>
           </div>
           <div className="h-44 w-full">
             <ResponsiveContainer width="100%" height="100%">
@@ -675,7 +587,7 @@ const PincodeAgents = () => {
         <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm flex flex-col justify-between">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-base font-bold text-slate-800">Pincode Map</h3>
-            <span className="text-xs text-blue-600 hover:underline font-bold cursor-pointer">View Map</span>
+            <span onClick={() => navigate('/analytics')} className="text-xs text-blue-600 hover:underline font-bold cursor-pointer">View Map</span>
           </div>
           <div className="flex-1 flex flex-col items-center justify-center min-h-[160px] relative">
             <svg viewBox="0 0 100 100" className="w-28 h-28 text-blue-500/20 drop-shadow">
@@ -705,7 +617,7 @@ const PincodeAgents = () => {
         <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm flex flex-col justify-between">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-base font-bold text-slate-800">Query Status</h3>
-            <span className="text-xs text-blue-600 hover:underline font-bold cursor-pointer">View All</span>
+            <span onClick={() => navigate('/reports')} className="text-xs text-blue-600 hover:underline font-bold cursor-pointer">View All</span>
           </div>
           <div className="flex-1 flex flex-col items-center justify-center min-h-[160px]">
             <div className="w-28 h-28 rounded-full border-8 border-slate-100 flex items-center justify-center flex-col">
@@ -727,23 +639,17 @@ const PincodeAgents = () => {
         {/* Quick Actions Panel */}
         <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
           <h3 className="text-base font-bold text-slate-800 mb-4">Quick Actions</h3>
-          <div className="grid grid-cols-2 gap-3">
-            <button
-              onClick={() => setShowModal(true)}
-              className="bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl p-4 flex flex-col items-center justify-center text-center transition gap-2.5 group"
-            >
-              <Plus className="w-5.5 h-5.5 text-blue-600 group-hover:scale-110 transition duration-200" />
-              <span className="text-xs font-bold text-slate-700 uppercase leading-none mt-1">Create Pincode Agent</span>
-            </button>
-            <button className="bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl p-4 flex flex-col items-center justify-center text-center transition gap-2.5 group">
+          <div className="grid grid-cols-3 gap-3">
+            
+            <button onClick={() => setSelectedPincode('All Pincodes')} className="bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl p-4 flex flex-col items-center justify-center text-center transition gap-2.5 group">
               <Layers className="w-5.5 h-5.5 text-emerald-600 group-hover:scale-110 transition duration-200" />
               <span className="text-xs font-bold text-slate-700 uppercase leading-none mt-1">Assign Pincode</span>
             </button>
-            <button className="bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl p-4 flex flex-col items-center justify-center text-center transition gap-2.5 group">
+            <button onClick={() => navigate('/reports')} className="bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl p-4 flex flex-col items-center justify-center text-center transition gap-2.5 group">
               <FileCheck className="w-5.5 h-5.5 text-purple-600 group-hover:scale-110 transition duration-200" />
               <span className="text-xs font-bold text-slate-700 uppercase leading-none mt-1">Generate Report</span>
             </button>
-            <button className="bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl p-4 flex flex-col items-center justify-center text-center transition gap-2.5 group">
+            <button onClick={() => navigate('/divisional-agents')} className="bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl p-4 flex flex-col items-center justify-center text-center transition gap-2.5 group">
               <Users className="w-5.5 h-5.5 text-rose-600 group-hover:scale-110 transition duration-200" />
               <span className="text-xs font-bold text-slate-700 uppercase leading-none mt-1">View All Agents</span>
             </button>

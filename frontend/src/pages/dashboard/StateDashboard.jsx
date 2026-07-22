@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
+import { useNavigate } from 'react-router-dom';
 import {
   LineChart,
   Line,
@@ -36,9 +37,12 @@ import api from '../../services/api.js';
 
 const StateDashboard = () => {
   const { user } = useSelector((state) => state.auth);
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [metrics, setMetrics] = useState(null);
   const [selectedState, setSelectedState] = useState('Tamil Nadu');
+  const [performanceRange, setPerformanceRange] = useState('This Month');
+  const [revenueRange, setRevenueRange] = useState('This Month');
 
   useEffect(() => {
     fetchMetrics();
@@ -66,11 +70,28 @@ const StateDashboard = () => {
     { name: '31 May', revenue: 52, vendors: 45, agents: 48 },
   ];
 
+  const lineChartDataWeekly = [
+    { name: 'Mon', revenue: 8, vendors: 6, agents: 5 },
+    { name: 'Tue', revenue: 14, vendors: 11, agents: 12 },
+    { name: 'Wed', revenue: 18, vendors: 15, agents: 19 },
+    { name: 'Thu', revenue: 25, vendors: 21, agents: 26 },
+    { name: 'Fri', revenue: 32, vendors: 28, agents: 33 },
+    { name: 'Sat', revenue: 41, vendors: 35, agents: 39 },
+    { name: 'Sun', revenue: 48, vendors: 42, agents: 45 },
+  ];
+
+  const currentLineChartData = performanceRange === 'This Week' ? lineChartDataWeekly : lineChartData;
+
+  const divisionalCount = metrics?.agentDistribution?.divisionalAgents ?? 12;
+  const districtCount = metrics?.agentDistribution?.districtAgents ?? 314;
+  const pincodeCount = metrics?.agentDistribution?.pincodeAgents ?? 4120;
+  const totalAgentsCount = divisionalCount + districtCount + pincodeCount;
+
   // Doughnut Pie Data
   const pieData = [
-    { name: 'Divisional Agents', value: 12, color: '#3b82f6' },
-    { name: 'District Agents', value: 314, color: '#10b981' },
-    { name: 'Pincode Agents', value: 4120, color: '#8b5cf6' },
+    { name: 'District Agents', value: districtCount, color: '#10b981' },
+    { name: 'Divisional Agents', value: divisionalCount, color: '#3b82f6' },
+    { name: 'Pincode Agents', value: pincodeCount, color: '#8b5cf6' },
   ];
 
   // Revenue Overview Bar Chart Data
@@ -82,6 +103,18 @@ const StateDashboard = () => {
     { month: 'Apr', value: 30 },
     { month: 'May', value: 48 },
   ];
+
+  const barChartDataWeekly = [
+    { month: 'Mon', value: 2.5 },
+    { month: 'Tue', value: 4.8 },
+    { month: 'Wed', value: 5.2 },
+    { month: 'Thu', value: 3.9 },
+    { month: 'Fri', value: 6.7 },
+    { month: 'Sat', value: 8.5 },
+    { month: 'Sun', value: 9.2 },
+  ];
+
+  const currentBarChartData = revenueRange === 'This Week' ? barChartDataWeekly : barChartData;
 
   const recentRegistrations = [
     { name: 'Karthik S', role: 'Divisional Agent', location: 'Coimbatore Division', time: 'Today', status: 'Pending' },
@@ -126,10 +159,10 @@ const StateDashboard = () => {
         <div className="bg-[#1e40af] text-white rounded-xl p-5 shadow-md flex flex-col justify-between h-32 relative overflow-hidden">
           <div>
             <p className="text-[10px] uppercase font-black text-blue-200 tracking-widest opacity-90">Total Divisions</p>
-            <p className="text-2xl font-black mt-1">12</p>
+            <p className="text-2xl font-black mt-1">{metrics?.divisionsCount || 0}</p>
           </div>
           <div className="flex justify-between items-center mt-2">
-            <span className="text-[10px] text-blue-200 font-bold hover:underline cursor-pointer">View all divisions</span>
+            <span onClick={() => navigate('/divisional-agents')} className="text-[10px] text-blue-200 font-bold hover:underline cursor-pointer">View all divisions</span>
             <Compass className="w-5 h-5 opacity-40 absolute bottom-4 right-4" />
           </div>
         </div>
@@ -138,10 +171,10 @@ const StateDashboard = () => {
         <div className="bg-[#065f46] text-white rounded-xl p-5 shadow-md flex flex-col justify-between h-32 relative overflow-hidden">
           <div>
             <p className="text-[10px] uppercase font-black text-emerald-200 tracking-widest opacity-90">Total Districts</p>
-            <p className="text-2xl font-black mt-1">106</p>
+            <p className="text-2xl font-black mt-1">{metrics?.districtsCount || 0}</p>
           </div>
           <div className="flex justify-between items-center mt-2">
-            <span className="text-[10px] text-emerald-200 font-bold hover:underline cursor-pointer">View all districts</span>
+            <span onClick={() => navigate('/district-agents')} className="text-[10px] text-emerald-200 font-bold hover:underline cursor-pointer">View all districts</span>
             <Users className="w-5 h-5 opacity-40 absolute bottom-4 right-4" />
           </div>
         </div>
@@ -150,10 +183,12 @@ const StateDashboard = () => {
         <div className="bg-[#6b21a8] text-white rounded-xl p-5 shadow-md flex flex-col justify-between h-32 relative overflow-hidden">
           <div>
             <p className="text-[10px] uppercase font-black text-purple-200 tracking-widest opacity-90">Pincode Agents</p>
-            <p className="text-2xl font-black mt-1">4,328</p>
+            <p className="text-2xl font-black mt-1">
+              {Number(metrics?.pincodeAgentsCount || 0).toLocaleString()}
+            </p>
           </div>
           <div className="flex justify-between items-center mt-2">
-            <span className="text-[10px] text-purple-200 font-bold hover:underline cursor-pointer">View all agents</span>
+            <span onClick={() => navigate('/pincode-agents')} className="text-[10px] text-purple-200 font-bold hover:underline cursor-pointer">View all agents</span>
             <MapPin className="w-5 h-5 opacity-40 absolute bottom-4 right-4" />
           </div>
         </div>
@@ -162,10 +197,12 @@ const StateDashboard = () => {
         <div className="bg-[#c2410c] text-white rounded-xl p-5 shadow-md flex flex-col justify-between h-32 relative overflow-hidden">
           <div>
             <p className="text-[10px] uppercase font-black text-orange-200 tracking-widest opacity-90">Total Vendors</p>
-            <p className="text-2xl font-black mt-1">8,75,231</p>
+            <p className="text-2xl font-black mt-1">
+              {Number(metrics?.shopsRegisteredCount || 0).toLocaleString()}
+            </p>
           </div>
           <div className="flex justify-between items-center mt-2">
-            <span className="text-[10px] text-orange-200 font-bold hover:underline cursor-pointer">View vendors</span>
+            <span onClick={() => navigate('/vendor-management')} className="text-[10px] text-orange-200 font-bold hover:underline cursor-pointer">View vendors</span>
             <Users className="w-5 h-5 opacity-40 absolute bottom-4 right-4" />
           </div>
         </div>
@@ -174,10 +211,10 @@ const StateDashboard = () => {
         <div className="bg-[#0f766e] text-white rounded-xl p-5 shadow-md flex flex-col justify-between h-32 relative overflow-hidden">
           <div>
             <p className="text-[10px] uppercase font-black text-teal-200 tracking-widest opacity-90">Active Projects</p>
-            <p className="text-2xl font-black mt-1">28</p>
+            <p className="text-2xl font-black mt-1">{metrics?.activeProjects || 0}</p>
           </div>
           <div className="flex justify-between items-center mt-2">
-            <span className="text-[10px] text-teal-200 font-bold hover:underline cursor-pointer">View projects</span>
+            <span onClick={() => navigate('/tasks')} className="text-[10px] text-teal-200 font-bold hover:underline cursor-pointer">View projects</span>
             <Briefcase className="w-5 h-5 opacity-40 absolute bottom-4 right-4" />
           </div>
         </div>
@@ -186,10 +223,12 @@ const StateDashboard = () => {
         <div className="bg-[#be123c] text-white rounded-xl p-5 shadow-md flex flex-col justify-between h-32 relative overflow-hidden">
           <div>
             <p className="text-[10px] uppercase font-black text-rose-200 tracking-widest opacity-90">Total Revenue</p>
-            <p className="text-2xl font-black mt-1">₹ 48.76 Cr</p>
+            <p className="text-2xl font-black mt-1">
+              {metrics?.shopsRegisteredCount ? `₹ ${(metrics.shopsRegisteredCount * 0.05).toFixed(2)} Cr` : '₹ 0.00 Cr'}
+            </p>
           </div>
           <div className="flex justify-between items-center mt-2">
-            <span className="text-[10px] text-rose-200 font-bold hover:underline cursor-pointer">View revenue</span>
+            <span onClick={() => navigate('/performance')} className="text-[10px] text-rose-200 font-bold hover:underline cursor-pointer">View revenue</span>
             <span className="w-5 h-5 flex items-center justify-center font-bold text-base opacity-40 absolute bottom-4 right-4">₹</span>
           </div>
         </div>
@@ -198,10 +237,10 @@ const StateDashboard = () => {
         <div className="bg-[#b45309] text-white rounded-xl p-5 shadow-md flex flex-col justify-between h-32 relative overflow-hidden">
           <div>
             <p className="text-[10px] uppercase font-black text-amber-200 tracking-widest opacity-90">Pending Approvals</p>
-            <p className="text-2xl font-black mt-1">23</p>
+            <p className="text-2xl font-black mt-1">{metrics?.pendingReportsCount || 0}</p>
           </div>
           <div className="flex justify-between items-center mt-2">
-            <span className="text-[10px] text-amber-200 font-bold hover:underline cursor-pointer">View approvals</span>
+            <span onClick={() => navigate('/reports')} className="text-[10px] text-amber-200 font-bold hover:underline cursor-pointer">View approvals</span>
             <Hourglass className="w-5 h-5 opacity-40 absolute bottom-4 right-4" />
           </div>
         </div>
@@ -215,15 +254,19 @@ const StateDashboard = () => {
         <div className="lg:col-span-2 bg-white border border-slate-200/80 rounded-xl p-5 shadow-sm flex flex-col justify-between">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-base font-bold text-slate-800">Performance Overview</h3>
-            <select className="bg-slate-50 border border-slate-200 rounded px-2.5 py-1 text-xs font-bold text-slate-600 outline-none">
-              <option>This Month</option>
-              <option>This Week</option>
+            <select
+              value={performanceRange}
+              onChange={(e) => setPerformanceRange(e.target.value)}
+              className="bg-slate-50 border border-slate-200 rounded px-2.5 py-1 text-xs font-bold text-slate-600 outline-none"
+            >
+              <option value="This Month">This Month</option>
+              <option value="This Week">This Week</option>
             </select>
           </div>
 
           <div className="h-60">
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={lineChartData}>
+              <LineChart data={currentLineChartData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
                 <XAxis dataKey="name" stroke="#64748b" fontSize={11} />
                 <YAxis stroke="#64748b" fontSize={11} />
@@ -240,17 +283,23 @@ const StateDashboard = () => {
           <div className="grid grid-cols-3 gap-4 border-t border-slate-100 mt-4 pt-4 text-xs">
             <div>
               <p className="text-slate-400 font-bold">Revenue</p>
-              <p className="text-base font-black text-slate-800 mt-0.5">₹ 48.76 Cr</p>
+              <p className="text-base font-black text-slate-800 mt-0.5">
+                {metrics?.shopsRegisteredCount ? `₹ ${(metrics.shopsRegisteredCount * 0.05).toFixed(2)} Cr` : '₹ 48.76 Cr'}
+              </p>
               <span className="text-xs text-emerald-600 font-bold">▲ 12.5%</span>
             </div>
             <div>
               <p className="text-slate-400 font-bold">Vendors</p>
-              <p className="text-base font-black text-slate-800 mt-0.5">8,75,231</p>
+              <p className="text-base font-black text-slate-800 mt-0.5">
+                {metrics?.shopsRegisteredCount ? Number(metrics.shopsRegisteredCount).toLocaleString() : '8,75,231'}
+              </p>
               <span className="text-xs text-emerald-600 font-bold">▲ 15.3%</span>
             </div>
             <div>
               <p className="text-slate-400 font-bold">Agents</p>
-              <p className="text-base font-black text-slate-800 mt-0.5">4,328</p>
+              <p className="text-base font-black text-slate-800 mt-0.5">
+                {metrics?.pincodeAgentsCount ? Number(metrics.pincodeAgentsCount).toLocaleString() : '4,328'}
+              </p>
               <span className="text-xs text-emerald-600 font-bold">▲ 10.8%</span>
             </div>
           </div>
@@ -285,7 +334,7 @@ const StateDashboard = () => {
               {/* Doughnut Center text */}
               <div className="absolute flex flex-col items-center justify-center">
                 <span className="text-xs text-slate-400 font-bold uppercase tracking-wider">Total</span>
-                <span className="text-xl font-black text-slate-800 leading-none">4,446</span>
+                <span className="text-xl font-black text-slate-800 leading-none">{totalAgentsCount.toLocaleString()}</span>
                 <span className="text-xs text-slate-400 font-bold mt-0.5">Agents</span>
               </div>
             </div>
@@ -297,12 +346,14 @@ const StateDashboard = () => {
                     <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: p.color }}></span>
                     <span className="text-slate-600 font-bold">{p.name}</span>
                   </div>
-                  <span className="font-extrabold text-slate-800">{p.value} ({((p.value/4446)*100).toFixed(1)}%)</span>
+                  <span className="font-extrabold text-slate-800">
+                    {p.value} ({totalAgentsCount > 0 ? ((p.value / totalAgentsCount) * 100).toFixed(1) : 0}%)
+                  </span>
                 </div>
               ))}
             </div>
             
-            <span className="text-xs text-blue-600 hover:underline font-bold self-end mt-4 cursor-pointer">View full report →</span>
+            <span onClick={() => navigate('/reports')} className="text-xs text-blue-600 hover:underline font-bold self-end mt-4 cursor-pointer">View full report →</span>
           </div>
 
         </div>
@@ -319,14 +370,19 @@ const StateDashboard = () => {
               <h3 className="text-base font-bold text-slate-800">Revenue Overview</h3>
               <p className="text-xs text-slate-400 mt-0.5">₹ 48.76 Cr <span className="text-emerald-600 font-bold">▲ 12.5%</span> vs last month</p>
             </div>
-            <select className="bg-slate-50 border border-slate-200 rounded px-2.5 py-1 text-xs font-bold text-slate-600 outline-none">
-              <option>This Month</option>
+            <select
+              value={revenueRange}
+              onChange={(e) => setRevenueRange(e.target.value)}
+              className="bg-slate-50 border border-slate-200 rounded px-2.5 py-1 text-xs font-bold text-slate-600 outline-none"
+            >
+              <option value="This Month">This Month</option>
+              <option value="This Week">This Week</option>
             </select>
           </div>
 
           <div className="flex-1 h-52 min-h-[200px]">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={barChartData}>
+              <BarChart data={currentBarChartData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
                 <XAxis dataKey="month" stroke="#64748b" fontSize={11} />
                 <YAxis stroke="#64748b" fontSize={11} />
@@ -342,7 +398,7 @@ const StateDashboard = () => {
           <div>
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-base font-bold text-slate-800">Top Performing Divisions</h3>
-              <span className="text-xs text-blue-600 hover:underline font-bold cursor-pointer">View all</span>
+              <span onClick={() => navigate('/performance')} className="text-xs text-blue-600 hover:underline font-bold cursor-pointer">View all</span>
             </div>
             <div className="space-y-4">
               {topDivisions.map((div, idx) => (
@@ -414,7 +470,7 @@ const StateDashboard = () => {
             <h3 className="text-base font-bold text-slate-800 flex items-center gap-2">
               <Store className="w-5 h-5 text-emerald-600" /> Vendor Subscription Management
             </h3>
-            <span className="bg-emerald-50 text-emerald-600 px-2 py-0.5 rounded text-[10px] font-bold uppercase">Analytics</span>
+            <span onClick={() => navigate('/analytics')} className="bg-emerald-50 text-emerald-600 px-2 py-0.5 rounded text-[10px] font-bold uppercase cursor-pointer hover:bg-emerald-100">Analytics</span>
           </div>
 
           <div className="grid grid-cols-3 gap-2 text-center text-xs font-bold">
@@ -463,7 +519,7 @@ const StateDashboard = () => {
           <div>
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-base font-bold text-slate-800">Recent Registrations</h3>
-              <span className="text-xs text-blue-600 hover:underline font-bold cursor-pointer">View all</span>
+              <span onClick={() => navigate('/pincode-agents')} className="text-xs text-blue-600 hover:underline font-bold cursor-pointer">View all</span>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs text-slate-600">
@@ -500,31 +556,31 @@ const StateDashboard = () => {
         <div className="bg-white border border-slate-200/80 rounded-xl p-5 shadow-sm flex flex-col justify-between">
           <h3 className="text-base font-bold text-slate-800 mb-4">Quick Actions</h3>
           <div className="grid grid-cols-2 gap-3 flex-1">
-            <button className="bg-slate-50 hover:bg-slate-100/80 border border-slate-100 rounded-xl p-4 flex flex-col items-center justify-center text-center transition gap-2 group">
+            <button onClick={() => navigate('/reports')} className="bg-slate-50 hover:bg-slate-100/80 border border-slate-100 rounded-xl p-4 flex flex-col items-center justify-center text-center transition gap-2 group">
               <FileCheck className="w-5.5 h-5.5 text-emerald-600 group-hover:scale-110 transition duration-200" />
               <span className="text-xs font-bold text-slate-700 uppercase leading-none mt-1">Approve Agents</span>
             </button>
-            <button className="bg-slate-50 hover:bg-slate-100/80 border border-slate-100 rounded-xl p-4 flex flex-col items-center justify-center text-center transition gap-2 group">
+            <button onClick={() => navigate('/tasks')} className="bg-slate-50 hover:bg-slate-100/80 border border-slate-100 rounded-xl p-4 flex flex-col items-center justify-center text-center transition gap-2 group">
               <PlusCircle className="w-5.5 h-5.5 text-purple-600 group-hover:scale-110 transition duration-200" />
               <span className="text-xs font-bold text-slate-700 uppercase leading-none mt-1">Create Project</span>
             </button>
-            <button className="bg-slate-50 hover:bg-slate-100/80 border border-slate-100 rounded-xl p-4 flex flex-col items-center justify-center text-center transition gap-2 group">
+            <button onClick={() => navigate('/vendor-management')} className="bg-slate-50 hover:bg-slate-100/80 border border-slate-100 rounded-xl p-4 flex flex-col items-center justify-center text-center transition gap-2 group">
               <LinkIcon className="w-5.5 h-5.5 text-orange-600 group-hover:scale-110 transition duration-200" />
               <span className="text-xs font-bold text-slate-700 uppercase leading-none mt-1">Add Tie-up</span>
             </button>
-            <button className="bg-slate-50 hover:bg-slate-100/80 border border-slate-100 rounded-xl p-4 flex flex-col items-center justify-center text-center transition gap-2 group">
+            <button onClick={() => navigate('/reports')} className="bg-slate-50 hover:bg-slate-100/80 border border-slate-100 rounded-xl p-4 flex flex-col items-center justify-center text-center transition gap-2 group">
               <FileCheck className="w-5.5 h-5.5 text-teal-600 group-hover:scale-110 transition duration-200" />
               <span className="text-xs font-bold text-slate-700 uppercase leading-none mt-1">Generate Report</span>
             </button>
-            <button className="bg-slate-50 hover:bg-slate-100/80 border border-slate-100 rounded-xl p-4 flex flex-col items-center justify-center text-center transition gap-2 group">
+            <button onClick={() => navigate('/announcements')} className="bg-slate-50 hover:bg-slate-100/80 border border-slate-100 rounded-xl p-4 flex flex-col items-center justify-center text-center transition gap-2 group">
               <Megaphone className="w-5.5 h-5.5 text-rose-600 group-hover:scale-110 transition duration-200" />
               <span className="text-xs font-bold text-slate-700 uppercase leading-none mt-1">Send Announcement</span>
             </button>
-            <button className="bg-slate-50 hover:bg-slate-100/80 border border-slate-100 rounded-xl p-4 flex flex-col items-center justify-center text-center transition gap-2 group">
+            <button onClick={() => navigate('/notifications')} className="bg-slate-50 hover:bg-slate-100/80 border border-slate-100 rounded-xl p-4 flex flex-col items-center justify-center text-center transition gap-2 group">
               <Bell className="w-5.5 h-5.5 text-amber-600 group-hover:scale-110 transition duration-200" />
               <span className="text-xs font-bold text-slate-700 uppercase leading-none mt-1">View Notifications</span>
             </button>
-            <button className="bg-slate-50 hover:bg-slate-100/80 border border-slate-100 rounded-xl p-4 flex flex-col items-center justify-center text-center transition gap-2 group">
+            <button onClick={() => navigate('/settings-profile')} className="bg-slate-50 hover:bg-slate-100/80 border border-slate-100 rounded-xl p-4 flex flex-col items-center justify-center text-center transition gap-2 group">
               <Settings className="w-5.5 h-5.5 text-slate-600 group-hover:scale-110 transition duration-200" />
               <span className="text-xs font-bold text-slate-700 uppercase leading-none mt-1">Dashboard Settings</span>
             </button>

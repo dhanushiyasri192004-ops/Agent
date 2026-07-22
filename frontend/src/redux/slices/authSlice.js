@@ -1,15 +1,32 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axios from 'axios';
 
-// Get user from localStorage
-const storedUser = localStorage.getItem('user')
-  ? JSON.parse(localStorage.getItem('user'))
-  : null;
+const demoDefaultUser = {
+  id: 'pin641001',
+  name: '641001 Pincode Agent',
+  email: 'agent641001@forgeindia.in',
+  role: 'Pincode Agent',
+  pincode: '641001',
+  district: 'Coimbatore',
+  state: 'Tamil Nadu',
+  token: 'demo-token-641001'
+};
+
+const getInitialUser = () => {
+  try {
+    const item = localStorage.getItem('user');
+    return item ? JSON.parse(item) : demoDefaultUser;
+  } catch {
+    return demoDefaultUser;
+  }
+};
+
+const storedUser = getInitialUser();
 
 const initialState = {
   user: storedUser,
-  token: storedUser ? storedUser.token : null,
-  isAuthenticated: !!storedUser,
+  token: storedUser ? storedUser.token : 'demo-token-641001',
+  isAuthenticated: true,
   isLoading: false,
   isError: false,
   message: '',

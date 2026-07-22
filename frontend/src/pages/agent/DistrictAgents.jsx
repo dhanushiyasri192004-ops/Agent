@@ -52,6 +52,45 @@ const DistrictAgents = () => {
       user: { email: 'karthik@agent.com' }
     },
     {
+      _id: 'DAG001_2',
+      name: 'Ramesh K',
+      division: 'Chennai Division',
+      district: 'Chengalpattu',
+      customers: '1,850',
+      queries: 35,
+      tieups: 30,
+      performance: 92,
+      status: 'Active',
+      phone: '9876543225',
+      user: { email: 'ramesh_k@agent.com' }
+    },
+    {
+      _id: 'DAG001_3',
+      name: 'Suresh Kumar',
+      division: 'Chennai Division',
+      district: 'Kanchipuram',
+      customers: '1,200',
+      queries: 28,
+      tieups: 25,
+      performance: 89,
+      status: 'Active',
+      phone: '9876543226',
+      user: { email: 'suresh_kanchi@agent.com' }
+    },
+    {
+      _id: 'DAG001_4',
+      name: 'Vijay Anand',
+      division: 'Chennai Division',
+      district: 'Tiruvallur',
+      customers: '900',
+      queries: 22,
+      tieups: 20,
+      performance: 86,
+      status: 'Active',
+      phone: '9876543227',
+      user: { email: 'vijay_tiru@agent.com' }
+    },
+    {
       _id: 'DAG002',
       name: 'Prakash B',
       division: 'Coimbatore Division',
@@ -105,13 +144,16 @@ const DistrictAgents = () => {
     }
   ];
 
-  const [agents, setAgents] = useState(initialMockAgents);
+  const [agents, setAgents] = useState([]);
 
   useEffect(() => {
     fetchAgents();
     if (user?.agentInfo) {
       setStateName(user.agentInfo.state || 'Tamil Nadu');
       setDivision(user.agentInfo.division || '');
+      if (user.role === 'Divisional Agent') {
+        setSelectedDivision(user.agentInfo.division);
+      }
     }
   }, [user]);
 
@@ -126,23 +168,36 @@ const DistrictAgents = () => {
         name: agent.name,
         division: agent.division || 'Unassigned',
         district: agent.district || 'Unassigned',
-        customers: '380',
-        queries: 12,
-        tieups: 8,
-        performance: 84,
+        customers: '0',
+        queries: 0,
+        tieups: 0,
+        performance: 100,
         status: agent.status || 'Active',
         phone: agent.phone || 'N/A',
         user: { email: agent.user?.email || '' }
       }));
 
-      // Combine ensuring no duplicates
-      const all = [...initialMockAgents];
-      formattedDb.forEach(db => {
-        if (!all.some(a => a.user.email === db.user.email)) {
-          all.push(db);
-        }
-      });
-      setAgents(all);
+      setAgents(formattedDb);
+      const divisionDistrictMap = {
+        'Chennai Division': ['Chennai', 'Chengalpattu', 'Kanchipuram', 'Tiruvallur'],
+        'Vellore Division': ['Vellore', 'Ranipet', 'Tirupathur', 'Tiruvannamalai'],
+        'Salem Division': ['Salem', 'Namakkal', 'Dharmapuri', 'Krishnagiri'],
+        'Coimbatore Division': ['Coimbatore', 'Tiruppur', 'Erode', 'The Nilgiris', 'Coimbatore District'],
+        'Trichy Division': ['Tiruchirappalli', 'Karur', 'Perambalur', 'Ariyalur', 'Trichy'],
+        'Thanjavur Division': ['Thanjavur', 'Tiruvarur', 'Nagapattinam', 'Mayiladuthurai'],
+        'Madurai Division': ['Madurai', 'Dindigul', 'Theni', 'Sivagangai', 'Ramanathapuram'],
+        'Tirunelveli Division': ['Tirunelveli', 'Tenkasi', 'Thoothukudi', 'Kanniyakumari', 'Virudhunagar']
+      };
+
+      const divisionFiltered = user?.role === 'Divisional Agent' && user?.agentInfo?.division
+        ? all.filter(a => {
+            const userDiv = user.agentInfo.division;
+            const allowedDistricts = divisionDistrictMap[userDiv] || [];
+            return a.division === userDiv && allowedDistricts.some(d => a.district.toLowerCase().includes(d.toLowerCase()));
+          })
+        : all;
+
+      setAgents(divisionFiltered);
     } catch (err) {
       console.error('Error fetching agents:', err);
     } finally {
@@ -222,6 +277,36 @@ const DistrictAgents = () => {
     return matchesSearch && matchesDivision && matchesDistrict && matchesStatus && matchesPerf;
   });
 
+  const pendingApprovalsList = [
+    { name: 'Rajesh Kumar', info: 'Chennai Division - Chengalpattu District', division: 'Chennai Division', date: 'Submitted on 16 May 2025' },
+    { name: 'Sathish P', info: 'Coimbatore Division - Tirupur District', division: 'Coimbatore Division', date: 'Submitted on 15 May 2025' },
+    { name: 'Karthikeyan M', info: 'Madurai Division - Sivaganga District', division: 'Madurai Division', date: 'Submitted on 14 May 2025' },
+    { name: 'Naveen R', info: 'Trichy Division - Ariyalur District', division: 'Trichy Division', date: 'Submitted on 14 May 2025' }
+  ];
+
+  const filteredPending = user?.role === 'Divisional Agent' && user?.agentInfo?.division
+    ? pendingApprovalsList.filter(p => p.division === user.agentInfo.division)
+    : pendingApprovalsList;
+
+  const recentActivitiesList = [
+    { text: 'New District Agent Karthik M registered', time: '16 May 2025, 10:30 AM', color: 'bg-blue-500', division: 'Chennai Division' },
+    { text: 'Business tie-up added in Chennai District', time: '15 May 2025, 04:15 PM', color: 'bg-emerald-500', division: 'Chennai Division' },
+    { text: 'Vendor query resolved in Coimbatore District', time: '15 May 2025, 02:45 PM', color: 'bg-indigo-500', division: 'Coimbatore Division' },
+    { text: 'District report submitted by Madurai District Agent', time: '14 May 2025, 11:20 AM', color: 'bg-amber-500', division: 'Madurai Division' },
+    { text: 'New Pincode Agent assigned in Salem District', time: '14 May 2025, 09:30 AM', color: 'bg-rose-500', division: 'Salem Division' }
+  ];
+
+  const filteredActivities = user?.role === 'Divisional Agent' && user?.agentInfo?.division
+    ? recentActivitiesList.filter(a => a.division === user.agentInfo.division)
+    : recentActivitiesList;
+
+  const totalAgentsCount = agents.length;
+  const activeAgentsCount = agents.filter(a => a.status === 'Active' || a.status === 'Approved').length;
+  const pendingAgentsCount = agents.filter(a => a.status === 'Pending').length;
+  const inactiveAgentsCount = agents.filter(a => a.status === 'Inactive').length;
+  const totalQueriesCount = agents.reduce((sum, a) => sum + (Number(a.queries) || 0), 0).toLocaleString();
+  const totalTieupsCount = agents.reduce((sum, a) => sum + (Number(a.tieups) || 0), 0).toLocaleString();
+
   // Pie chart data
   const queriesPieData = [
     { name: 'Open', value: 632, color: '#3b82f6' },
@@ -269,7 +354,7 @@ const DistrictAgents = () => {
         <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm flex items-center justify-between">
           <div>
             <p className="text-xs font-bold text-blue-600 uppercase tracking-wider">Total Agents</p>
-            <p className="text-2xl font-black text-slate-800 mt-1.5">156</p>
+            <p className="text-2xl font-black text-slate-800 mt-1.5">{totalAgentsCount}</p>
             <span className="text-xs text-blue-500 hover:underline cursor-pointer font-bold block mt-1">View all agents</span>
           </div>
           <div className="w-11 h-11 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600 shrink-0">
@@ -281,7 +366,7 @@ const DistrictAgents = () => {
         <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm flex items-center justify-between">
           <div>
             <p className="text-xs font-bold text-emerald-600 uppercase tracking-wider">Active District</p>
-            <p className="text-2xl font-black text-slate-800 mt-1.5">142</p>
+            <p className="text-2xl font-black text-slate-800 mt-1.5">{activeAgentsCount}</p>
             <span className="text-xs text-emerald-500 hover:underline cursor-pointer font-bold block mt-1">View active agents</span>
           </div>
           <div className="w-11 h-11 rounded-lg bg-emerald-50 flex items-center justify-center text-emerald-600 shrink-0">
@@ -293,7 +378,7 @@ const DistrictAgents = () => {
         <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm flex items-center justify-between">
           <div>
             <p className="text-xs font-bold text-amber-600 uppercase tracking-wider">Pending Approval</p>
-            <p className="text-2xl font-black text-slate-800 mt-1.5">8</p>
+            <p className="text-2xl font-black text-slate-800 mt-1.5">{pendingAgentsCount}</p>
             <span className="text-xs text-amber-500 hover:underline cursor-pointer font-bold block mt-1">View pending</span>
           </div>
           <div className="w-11 h-11 rounded-lg bg-amber-50 flex items-center justify-center text-amber-600 shrink-0">
@@ -305,7 +390,7 @@ const DistrictAgents = () => {
         <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm flex items-center justify-between">
           <div>
             <p className="text-xs font-bold text-rose-600 uppercase tracking-wider">Inactive Agents</p>
-            <p className="text-2xl font-black text-slate-800 mt-1.5">6</p>
+            <p className="text-2xl font-black text-slate-800 mt-1.5">{inactiveAgentsCount}</p>
             <span className="text-xs text-rose-500 hover:underline cursor-pointer font-bold block mt-1">View inactive</span>
           </div>
           <div className="w-11 h-11 rounded-lg bg-rose-50 flex items-center justify-center text-rose-600 shrink-0">
@@ -317,7 +402,7 @@ const DistrictAgents = () => {
         <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm flex items-center justify-between">
           <div>
             <p className="text-xs font-bold text-purple-600 uppercase tracking-wider">Vendor Queries</p>
-            <p className="text-2xl font-black text-slate-800 mt-1.5">2,458</p>
+            <p className="text-2xl font-black text-slate-800 mt-1.5">{totalQueriesCount}</p>
             <span className="text-xs text-purple-500 hover:underline cursor-pointer font-bold block mt-1">View all queries</span>
           </div>
           <div className="w-11 h-11 rounded-lg bg-purple-50 flex items-center justify-center text-purple-600 shrink-0">
@@ -329,7 +414,7 @@ const DistrictAgents = () => {
         <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm flex items-center justify-between">
           <div>
             <p className="text-xs font-bold text-teal-600 uppercase tracking-wider">Business Tie-ups</p>
-            <p className="text-2xl font-black text-slate-800 mt-1.5">328</p>
+            <p className="text-2xl font-black text-slate-800 mt-1.5">{totalTieupsCount}</p>
             <span className="text-xs text-teal-500 hover:underline cursor-pointer font-bold block mt-1">View tie-ups</span>
           </div>
           <div className="w-11 h-11 rounded-lg bg-teal-50 flex items-center justify-center text-teal-600 shrink-0">
@@ -361,7 +446,8 @@ const DistrictAgents = () => {
               <select
                 value={selectedDivision}
                 onChange={(e) => setSelectedDivision(e.target.value)}
-                className="bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-slate-600 outline-none"
+                disabled={user?.role === 'Divisional Agent'}
+                className="bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-slate-600 outline-none disabled:opacity-80 disabled:cursor-not-allowed"
               >
                 <option>All Divisions</option>
                 <option>Chennai Division</option>
@@ -511,42 +597,7 @@ const DistrictAgents = () => {
         {/* Right Sidebar Section */}
         <div className="space-y-6">
           
-          {/* Pending Approvals */}
-          <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="text-base font-bold text-slate-800">Pending District Agent Approvals</h3>
-              <span className="text-xs text-blue-600 hover:underline font-bold cursor-pointer">View All</span>
-            </div>
-            <div className="space-y-3">
-              {[
-                { name: 'Rajesh Kumar', info: 'Chennai Division - Chengalpattu District', date: 'Submitted on 16 May 2025' },
-                { name: 'Sathish P', info: 'Coimbatore Division - Tirupur District', date: 'Submitted on 15 May 2025' },
-                { name: 'Karthikeyan M', info: 'Madurai Division - Sivaganga District', date: 'Submitted on 14 May 2025' },
-                { name: 'Naveen R', info: 'Trichy Division - Ariyalur District', date: 'Submitted on 14 May 2025' }
-              ].map((p, idx) => (
-                <div key={idx} className="flex items-center justify-between border-b border-slate-50 pb-3 last:border-0 last:pb-0">
-                  <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center font-bold text-slate-600 text-xs">
-                      {p.name.charAt(0)}
-                    </div>
-                    <div>
-                      <h4 className="font-extrabold text-slate-800 text-xs leading-snug">{p.name}</h4>
-                      <p className="text-[10px] text-slate-400 font-semibold">{p.info}</p>
-                      <p className="text-[9px] text-slate-400 font-medium">{p.date}</p>
-                    </div>
-                  </div>
-                  <div className="flex gap-1">
-                    <button className="bg-emerald-50 text-emerald-600 border border-emerald-100 rounded px-2 py-0.5 text-[9px] font-bold">
-                      Approve
-                    </button>
-                    <button className="bg-rose-50 text-rose-600 border border-rose-100 rounded px-2 py-0.5 text-[9px] font-bold">
-                      Reject
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
+
 
           {/* Recent Activities */}
           <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm space-y-4">
@@ -555,13 +606,7 @@ const DistrictAgents = () => {
               <span className="text-xs text-blue-600 hover:underline font-bold cursor-pointer">View All</span>
             </div>
             <div className="space-y-4">
-              {[
-                { text: 'New District Agent Karthik M registered', time: '16 May 2025, 10:30 AM', color: 'bg-blue-500' },
-                { text: 'Business tie-up added in Chennai District', time: '15 May 2025, 04:15 PM', color: 'bg-emerald-500' },
-                { text: 'Vendor query resolved in Coimbatore District', time: '15 May 2025, 02:45 PM', color: 'bg-indigo-500' },
-                { text: 'District report submitted by Madurai District Agent', time: '14 May 2025, 11:20 AM', color: 'bg-amber-500' },
-                { text: 'New Pincode Agent assigned in Salem District', time: '14 May 2025, 09:30 AM', color: 'bg-rose-500' }
-              ].map((a, idx) => (
+              {filteredActivities.map((a, idx) => (
                 <div key={idx} className="flex gap-3 text-xs">
                   <div className={`w-1.5 h-1.5 rounded-full mt-1.5 shrink-0 ${a.color}`}></div>
                   <div>

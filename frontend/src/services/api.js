@@ -2,9 +2,6 @@ import axios from 'axios';
 
 const api = axios.create({
   baseURL: '',
-  headers: {
-    'Content-Type': 'application/json',
-  },
 });
 
 // Interceptor to add JWT token to requests if available

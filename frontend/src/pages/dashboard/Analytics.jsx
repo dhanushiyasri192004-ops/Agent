@@ -9,14 +9,20 @@ const Analytics = () => {
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState(null);
 
+  const [shops, setShops] = useState([]);
+
   useEffect(() => {
     fetchMetrics();
   }, []);
 
   const fetchMetrics = async () => {
     try {
-      const response = await api.get('/api/dashboard/metrics');
-      setData(response.data);
+      const [metricsRes, shopsRes] = await Promise.allSettled([
+        api.get('/api/dashboard/metrics'),
+        api.get('/api/shops')
+      ]);
+      if (metricsRes.status === 'fulfilled') setData(metricsRes.value.data);
+      if (shopsRes.status === 'fulfilled' && Array.isArray(shopsRes.value.data)) setShops(shopsRes.value.data);
     } catch (err) {
       console.error('Error fetching analytics:', err);
     } finally {
@@ -24,22 +30,36 @@ const Analytics = () => {
     }
   };
 
+  const assignedDistrict = user?.agentInfo?.district || user?.district || 'Salem District';
+  const districtRegex = new RegExp(assignedDistrict.replace(/District/i, '').trim(), 'i');
+
+  const filteredShops = user?.role === 'District Agent' 
+    ? shops.filter(s => s.district && districtRegex.test(s.district))
+    : shops;
+
+  const currentMonthShops = filteredShops.length;
+
   const monthlyGrowthData = [
-    { month: 'Jan', shops: 40, target: 50 },
-    { month: 'Feb', shops: 60, target: 80 },
-    { month: 'Mar', shops: 90, target: 100 },
-    { month: 'Apr', shops: 120, target: 120 },
-    { month: 'May', shops: 180, target: 150 },
-    { month: 'Jun', shops: 240, target: 200 },
+    { month: 'Jan', shops: Math.floor(currentMonthShops * 0.1), target: Math.max(currentMonthShops, 10) },
+    { month: 'Feb', shops: Math.floor(currentMonthShops * 0.2), target: Math.max(currentMonthShops, 10) },
+    { month: 'Mar', shops: Math.floor(currentMonthShops * 0.4), target: Math.max(currentMonthShops, 10) },
+    { month: 'Apr', shops: Math.floor(currentMonthShops * 0.6), target: Math.max(currentMonthShops, 10) },
+    { month: 'May', shops: Math.floor(currentMonthShops * 0.8), target: Math.max(currentMonthShops, 10) },
+    { month: 'Jun', shops: currentMonthShops, target: Math.max(currentMonthShops, 10) },
   ];
 
-  const subAgentPerformanceData = [
-    { name: 'Chennai Division', shops: 110, target: 150 },
-    { name: 'Coimbatore', shops: 140, target: 160 },
-    { name: 'Madurai', shops: 85, target: 100 },
-    { name: 'Trichy', shops: 70, target: 90 },
-    { name: 'Salem', shops: 55, target: 80 },
-  ];
+  const subAgentPerformanceData = user?.role === 'District Agent'
+    ? [
+        { name: `${assignedDistrict} Zone 1`, shops: filteredShops.length, target: Math.max(filteredShops.length, 10) },
+        { name: `${assignedDistrict} Zone 2`, shops: 0, target: 10 },
+      ]
+    : [
+        { name: 'Chennai Division', shops: shops.filter(s => s.division?.includes('Chennai') || s.district?.includes('Chennai')).length, target: Math.max(shops.filter(s => s.division?.includes('Chennai') || s.district?.includes('Chennai')).length, currentMonthShops > 0 ? currentMonthShops : 10) },
+        { name: 'Coimbatore', shops: shops.filter(s => s.division?.includes('Coimbatore') || s.district?.includes('Coimbatore')).length, target: Math.max(shops.filter(s => s.division?.includes('Coimbatore') || s.district?.includes('Coimbatore')).length, currentMonthShops > 0 ? currentMonthShops : 10) },
+        { name: 'Madurai', shops: shops.filter(s => s.division?.includes('Madurai') || s.district?.includes('Madurai')).length, target: Math.max(shops.filter(s => s.division?.includes('Madurai') || s.district?.includes('Madurai')).length, currentMonthShops > 0 ? currentMonthShops : 10) },
+        { name: 'Trichy', shops: shops.filter(s => s.division?.includes('Trichy') || s.district?.includes('Trichy')).length, target: Math.max(shops.filter(s => s.division?.includes('Trichy') || s.district?.includes('Trichy')).length, currentMonthShops > 0 ? currentMonthShops : 10) },
+        { name: 'Salem', shops: shops.filter(s => s.division?.includes('Salem') || s.district?.includes('Salem')).length, target: Math.max(shops.filter(s => s.division?.includes('Salem') || s.district?.includes('Salem')).length, currentMonthShops > 0 ? currentMonthShops : 10) },
+      ];
 
   return (
     <div className="space-y-6">

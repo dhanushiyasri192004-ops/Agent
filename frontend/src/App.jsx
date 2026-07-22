@@ -4,6 +4,7 @@ import { useSelector } from 'react-redux';
 
 // Auth Pages
 import Login from './pages/auth/Login.jsx';
+import Register from './pages/auth/Register.jsx';
 
 // Dashboard Pages
 import StateDashboard from './pages/dashboard/StateDashboard.jsx';
@@ -66,6 +67,7 @@ function App() {
       <Routes>
         {/* Public Routes */}
         <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
 
         {/* Protected Dashboard Routes */}
         <Route

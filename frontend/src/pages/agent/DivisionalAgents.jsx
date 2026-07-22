@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import {
   Users, Plus, ShieldAlert, Check, X, Phone, Mail, Compass, MapPin, Store,
   FileCheck, FileText, Upload, Clock, Settings, Search, Filter, Edit2, Eye,
@@ -13,6 +13,7 @@ import api from '../../services/api.js';
 
 const DivisionalAgents = () => {
   const { user } = useSelector((state) => state.auth);
+  const navigate = useNavigate();
   const [dbAgents, setDbAgents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -22,6 +23,7 @@ const DivisionalAgents = () => {
   const [selectedDivision, setSelectedDivision] = useState('All Divisions');
   const [selectedStatus, setSelectedStatus] = useState('All Status');
   const [selectedPerformance, setSelectedPerformance] = useState('All');
+  const [performancePeriod, setPerformancePeriod] = useState('This Month');
 
   // Form fields
   const [email, setEmail] = useState('');
@@ -34,71 +36,7 @@ const DivisionalAgents = () => {
   const [success, setSuccess] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
-  // Initial mock agents as requested by the mockup image
-  const initialMockAgents = [
-    {
-      _id: 'DA301',
-      name: 'Rajesh Kumar',
-      division: 'Chennai Division',
-      districts: 6,
-      customers: '2,540',
-      revenue: '₹ 2.45 Cr',
-      performance: 96,
-      status: 'Active',
-      phone: '9876543210',
-      user: { email: 'rajesh@agent.com' }
-    },
-    {
-      _id: 'DA302',
-      name: 'Prakash B',
-      division: 'Coimbatore Division',
-      districts: 5,
-      customers: '1,870',
-      revenue: '₹ 1.89 Cr',
-      performance: 92,
-      status: 'Active',
-      phone: '9876543211',
-      user: { email: 'prakash@agent.com' }
-    },
-    {
-      _id: 'DA303',
-      name: 'Meena Devi',
-      division: 'Madurai Division',
-      districts: 4,
-      customers: '1,650',
-      revenue: '₹ 1.54 Cr',
-      performance: 91,
-      status: 'Active',
-      phone: '9876543212',
-      user: { email: 'meena@agent.com' }
-    },
-    {
-      _id: 'DA304',
-      name: 'Senthil Kumar',
-      division: 'Trichy Division',
-      districts: 4,
-      customers: '1,320',
-      revenue: '₹ 1.32 Cr',
-      performance: 88,
-      status: 'Inactive',
-      phone: '9876543213',
-      user: { email: 'senthil@agent.com' }
-    },
-    {
-      _id: 'DA305',
-      name: 'Suresh R',
-      division: 'Salem Division',
-      districts: 4,
-      customers: '1,180',
-      revenue: '₹ 1.08 Cr',
-      performance: 85,
-      status: 'Active',
-      phone: '9876543214',
-      user: { email: 'suresh@agent.com' }
-    }
-  ];
-
-  const [agents, setAgents] = useState(initialMockAgents);
+  const [agents, setAgents] = useState([]);
 
   useEffect(() => {
     fetchAgents();
@@ -110,33 +48,35 @@ const DivisionalAgents = () => {
   const fetchAgents = async () => {
     try {
       const response = await api.get('/api/agents');
-      const filtered = response.data.filter(a => a.role === 'Divisional Agent');
+      const assignedDistrict = user?.agentInfo?.district || user?.district || 'Salem District';
+      const districtRegex = new RegExp(assignedDistrict.replace(/District/i, '').trim(), 'i');
+
+      const filtered = response.data.filter(a => {
+        if (a.role !== 'Divisional Agent') return false;
+        if (user?.role === 'District Agent' && a.district && !districtRegex.test(a.district)) return false;
+        return true;
+      });
+
       setDbAgents(filtered);
 
-      // Merge mock data with real database agents
       const formattedDb = filtered.map((agent, index) => ({
         _id: agent._id || `DB_${index}`,
         name: agent.name,
         division: agent.division || 'Unassigned',
-        districts: 3,
-        customers: '450',
-        revenue: '₹ 0.25 Cr',
-        performance: 82,
+        district: agent.district || assignedDistrict,
+        districts: 1,
+        customers: '0',
+        revenue: '₹ 0.00',
+        performance: 100,
         status: agent.status || 'Active',
         phone: agent.phone || 'N/A',
         user: { email: agent.user?.email || '' }
       }));
 
-      // Combine ensuring no duplicates
-      const all = [...initialMockAgents];
-      formattedDb.forEach(db => {
-        if (!all.some(a => a.user.email === db.user.email)) {
-          all.push(db);
-        }
-      });
-      setAgents(all);
+      setAgents(formattedDb);
     } catch (err) {
       console.error('Error fetching agents:', err);
+      setAgents([]);
     } finally {
       setLoading(false);
     }
@@ -197,17 +137,24 @@ const DivisionalAgents = () => {
 
   // Filter logic
   const filteredAgents = agents.filter(agent => {
-    const matchesSearch = agent.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                          agent.division.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          agent._id.toLowerCase().includes(searchTerm.toLowerCase());
+    const nameStr = agent.name || '';
+    const divisionStr = agent.division || '';
+    const idStr = agent._id || '';
+
+    const matchesSearch = nameStr.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                          divisionStr.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          idStr.toLowerCase().includes(searchTerm.toLowerCase());
     
-    const matchesDivision = selectedDivision === 'All Divisions' || agent.division === selectedDivision;
-    const matchesStatus = selectedStatus === 'All Status' || agent.status === selectedStatus;
+    const matchesDivision = selectedDivision === 'All Divisions' || 
+                            divisionStr.toLowerCase().includes(selectedDivision.toLowerCase().replace(' division', '').trim());
+                            
+    const matchesStatus = selectedStatus === 'All Status' || 
+                          (agent.status || '').toLowerCase() === selectedStatus.toLowerCase();
     
     let matchesPerf = true;
-    if (selectedPerformance === 'High (>90%)') {
+    if (selectedPerformance === 'High') {
       matchesPerf = agent.performance > 90;
-    } else if (selectedPerformance === 'Average (80-90%)') {
+    } else if (selectedPerformance === 'Average') {
       matchesPerf = agent.performance >= 80 && agent.performance <= 90;
     }
 
@@ -223,10 +170,27 @@ const DivisionalAgents = () => {
     { name: 'Salem', Vendors: 1180, Revenue: 1.08 },
   ];
 
+  const chartDataWeekly = [
+    { name: 'Chennai', Vendors: 540, Revenue: 0.45 },
+    { name: 'Coimbatore', Vendors: 470, Revenue: 0.39 },
+    { name: 'Madurai', Vendors: 350, Revenue: 0.34 },
+    { name: 'Trichy', Vendors: 220, Revenue: 0.22 },
+    { name: 'Salem', Vendors: 180, Revenue: 0.18 },
+  ];
+
+  const currentChartData = performancePeriod === 'This Week' ? chartDataWeekly : chartData;
+
+  const totalDivisionsCount = new Set(agents.map(a => a.division).filter(Boolean)).size || agents.length;
+  const activeAgentsCount = agents.filter(a => a.status === 'Active' || a.status === 'Approved').length;
+  const pendingAgentsCount = agents.filter(a => a.status === 'Pending').length;
+  const inactiveAgentsCount = agents.filter(a => a.status === 'Inactive').length;
+  const totalVendorsCount = agents.reduce((sum, a) => sum + (Number(String(a.customers || 0).replace(/,/g, '')) || 0), 0).toLocaleString();
+  const totalRevenueCount = agents.length > 0 ? `₹ ${(agents.length * 1.2).toFixed(1)} Cr` : '₹ 0 Cr';
+
   return (
     <div className="space-y-6 text-slate-800">
       
-      {/* Top Breadcrumb & Heading Bar */}
+      {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
         <div>
           <div className="flex items-center gap-2">
@@ -244,8 +208,8 @@ const DivisionalAgents = () => {
         <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm flex items-center justify-between">
           <div>
             <p className="text-xs font-bold text-blue-600 uppercase tracking-wider">Total Divisions</p>
-            <p className="text-2xl font-black text-slate-800 mt-1.5">12</p>
-            <span className="text-xs text-blue-500 hover:underline cursor-pointer font-bold block mt-1">View all divisions</span>
+            <p className="text-2xl font-black text-slate-800 mt-1.5">{totalDivisionsCount}</p>
+            <span onClick={() => setSelectedDivision('All Divisions')} className="text-xs text-blue-500 hover:underline cursor-pointer font-bold block mt-1">View all divisions</span>
           </div>
           <div className="w-11 h-11 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600 shrink-0">
             <Compass className="w-5 h-5" />
@@ -256,8 +220,8 @@ const DivisionalAgents = () => {
         <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm flex items-center justify-between">
           <div>
             <p className="text-xs font-bold text-emerald-600 uppercase tracking-wider">Active Agents</p>
-            <p className="text-2xl font-black text-slate-800 mt-1.5">10</p>
-            <span className="text-xs text-emerald-500 hover:underline cursor-pointer font-bold block mt-1">View active agents</span>
+            <p className="text-2xl font-black text-slate-800 mt-1.5">{activeAgentsCount}</p>
+            <span onClick={() => setSelectedStatus('Active')} className="text-xs text-emerald-500 hover:underline cursor-pointer font-bold block mt-1">View active agents</span>
           </div>
           <div className="w-11 h-11 rounded-lg bg-emerald-50 flex items-center justify-center text-emerald-600 shrink-0">
             <Users className="w-5 h-5" />
@@ -268,8 +232,8 @@ const DivisionalAgents = () => {
         <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm flex items-center justify-between">
           <div>
             <p className="text-xs font-bold text-amber-600 uppercase tracking-wider">Pending Approval</p>
-            <p className="text-2xl font-black text-slate-800 mt-1.5">3</p>
-            <span className="text-xs text-amber-500 hover:underline cursor-pointer font-bold block mt-1">View pending</span>
+            <p className="text-2xl font-black text-slate-800 mt-1.5">{pendingAgentsCount}</p>
+            <span onClick={() => navigate('/reports')} className="text-xs text-amber-500 hover:underline cursor-pointer font-bold block mt-1">View pending</span>
           </div>
           <div className="w-11 h-11 rounded-lg bg-amber-50 flex items-center justify-center text-amber-600 shrink-0">
             <Clock className="w-5 h-5" />
@@ -280,8 +244,8 @@ const DivisionalAgents = () => {
         <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm flex items-center justify-between">
           <div>
             <p className="text-xs font-bold text-rose-600 uppercase tracking-wider">Inactive Agents</p>
-            <p className="text-2xl font-black text-slate-800 mt-1.5">2</p>
-            <span className="text-xs text-rose-500 hover:underline cursor-pointer font-bold block mt-1">View inactive</span>
+            <p className="text-2xl font-black text-slate-800 mt-1.5">{inactiveAgentsCount}</p>
+            <span onClick={() => setSelectedStatus('Inactive')} className="text-xs text-rose-500 hover:underline cursor-pointer font-bold block mt-1">View inactive</span>
           </div>
           <div className="w-11 h-11 rounded-lg bg-rose-50 flex items-center justify-center text-rose-600 shrink-0">
             <Users className="w-5 h-5" />
@@ -292,8 +256,8 @@ const DivisionalAgents = () => {
         <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm flex items-center justify-between">
           <div>
             <p className="text-xs font-bold text-purple-600 uppercase tracking-wider">Total Vendors</p>
-            <p className="text-2xl font-black text-slate-800 mt-1.5">15,240</p>
-            <span className="text-xs text-purple-500 hover:underline cursor-pointer font-bold block mt-1">View all vendors</span>
+            <p className="text-2xl font-black text-slate-800 mt-1.5">{totalVendorsCount}</p>
+            <span onClick={() => navigate('/vendor-management')} className="text-xs text-purple-500 hover:underline cursor-pointer font-bold block mt-1">View all vendors</span>
           </div>
           <div className="w-11 h-11 rounded-lg bg-purple-50 flex items-center justify-center text-purple-600 shrink-0">
             <Users className="w-5 h-5" />
@@ -304,8 +268,8 @@ const DivisionalAgents = () => {
         <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm flex items-center justify-between">
           <div>
             <p className="text-xs font-bold text-teal-600 uppercase tracking-wider">Total Revenue</p>
-            <p className="text-2xl font-black text-slate-800 mt-1.5">₹ 12.8 Cr</p>
-            <span className="text-xs text-teal-500 hover:underline cursor-pointer font-bold block mt-1">View revenue</span>
+            <p className="text-2xl font-black text-slate-800 mt-1.5">{totalRevenueCount}</p>
+            <span onClick={() => navigate('/performance')} className="text-xs text-teal-500 hover:underline cursor-pointer font-bold block mt-1">View revenue</span>
           </div>
           <div className="w-11 h-11 rounded-lg bg-teal-50 flex items-center justify-center text-teal-600 text-base font-black shrink-0">
             ₹
@@ -338,12 +302,12 @@ const DivisionalAgents = () => {
                 onChange={(e) => setSelectedDivision(e.target.value)}
                 className="bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-slate-600 outline-none"
               >
-                <option>All Divisions</option>
-                <option>Chennai Division</option>
-                <option>Coimbatore Division</option>
-                <option>Madurai Division</option>
-                <option>Trichy Division</option>
-                <option>Salem Division</option>
+                <option value="All Divisions">All Divisions</option>
+                <option value="Chennai Division">Chennai Division</option>
+                <option value="Coimbatore Division">Coimbatore Division</option>
+                <option value="Madurai Division">Madurai Division</option>
+                <option value="Trichy Division">Trichy Division</option>
+                <option value="Salem Division">Salem Division</option>
               </select>
 
               <select
@@ -351,9 +315,9 @@ const DivisionalAgents = () => {
                 onChange={(e) => setSelectedStatus(e.target.value)}
                 className="bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-slate-600 outline-none"
               >
-                <option>All Status</option>
-                <option>Active</option>
-                <option>Inactive</option>
+                <option value="All Status">All Status</option>
+                <option value="Active">Active</option>
+                <option value="Inactive">Inactive</option>
               </select>
 
               <select
@@ -361,9 +325,9 @@ const DivisionalAgents = () => {
                 onChange={(e) => setSelectedPerformance(e.target.value)}
                 className="bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-slate-600 outline-none"
               >
-                <option>All</option>
-                <option>High (&gt;90%)</option>
-                <option>Average (80-90%)</option>
+                <option value="All">All</option>
+                <option value="High">High (&gt;90%)</option>
+                <option value="Average">Average (80-90%)</option>
               </select>
 
               <button className="flex items-center gap-1.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-600 rounded-lg px-4 py-2 transition">
@@ -478,49 +442,14 @@ const DivisionalAgents = () => {
 
         </div>
 
-        {/* Right Column: Pending Approvals & Recent Activities */}
+        {/* Right Column: Recent Activities */}
         <div className="space-y-6">
           
-          {/* Pending Approvals */}
-          <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="text-base font-bold text-slate-800">Pending Approvals</h3>
-              <span className="text-xs text-blue-600 hover:underline font-bold cursor-pointer">View All</span>
-            </div>
-            <div className="space-y-3">
-              {[
-                { name: 'Rajesh Kumar', div: 'Chennai Division', date: 'Submitted on 16 May 2025' },
-                { name: 'Sathish P', div: 'Coimbatore Division', date: 'Submitted on 15 May 2025' },
-                { name: 'Karthik M', div: 'Madurai Division', date: 'Submitted on 14 May 2025' }
-              ].map((p, idx) => (
-                <div key={idx} className="flex items-center justify-between border-b border-slate-50 pb-3 last:border-0 last:pb-0">
-                  <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center font-bold text-slate-600 text-xs">
-                      {p.name.charAt(0)}
-                    </div>
-                    <div>
-                      <h4 className="font-extrabold text-slate-800 text-xs leading-snug">{p.name}</h4>
-                      <p className="text-[10px] text-slate-400 font-medium">{p.div} • {p.date}</p>
-                    </div>
-                  </div>
-                  <div className="flex gap-1.5">
-                    <button className="bg-emerald-50 text-emerald-600 hover:bg-emerald-100 border border-emerald-100 rounded px-2.5 py-1 text-[10px] font-bold transition">
-                      Approve
-                    </button>
-                    <button className="bg-rose-50 text-rose-600 hover:bg-rose-100 border border-rose-100 rounded px-2.5 py-1 text-[10px] font-bold transition">
-                      Reject
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
           {/* Recent Activities */}
           <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="text-base font-bold text-slate-800">Recent Activities</h3>
-              <span className="text-xs text-blue-600 hover:underline font-bold cursor-pointer">View All</span>
+              <span onClick={() => navigate('/notifications')} className="text-xs text-blue-600 hover:underline font-bold cursor-pointer">View All</span>
             </div>
             <div className="space-y-4">
               {[
@@ -552,11 +481,18 @@ const DivisionalAgents = () => {
         <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm flex flex-col justify-between">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-base font-bold text-slate-800">Division Performance Overview</h3>
-            <span className="text-xs text-blue-600 font-bold border border-blue-100 bg-blue-50/50 px-2.5 py-1 rounded-lg">This Month</span>
+            <select
+              value={performancePeriod}
+              onChange={(e) => setPerformancePeriod(e.target.value)}
+              className="bg-slate-50 border border-slate-200 rounded px-2.5 py-1 text-xs font-bold text-slate-650 outline-none"
+            >
+              <option value="This Month">This Month</option>
+              <option value="This Week">This Week</option>
+            </select>
           </div>
           <div className="h-60 w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={chartData}>
+              <BarChart data={currentChartData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
                 <XAxis dataKey="name" fontSize={10} stroke="#64748b" />
                 <YAxis fontSize={10} stroke="#64748b" />
@@ -574,7 +510,7 @@ const DivisionalAgents = () => {
           <div>
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-base font-bold text-slate-800">Top Performing Divisions</h3>
-              <span className="text-xs text-blue-600 hover:underline font-bold cursor-pointer">View All</span>
+              <span onClick={() => navigate('/performance')} className="text-xs text-blue-600 hover:underline font-bold cursor-pointer">View All</span>
             </div>
             <div className="space-y-4">
               {[
@@ -607,7 +543,7 @@ const DivisionalAgents = () => {
         <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm flex flex-col justify-between">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-base font-bold text-slate-800">Division Map</h3>
-            <span className="text-[10px] text-slate-400 font-bold">Active Regions</span>
+            <span onClick={() => navigate('/analytics')} className="text-[10px] text-blue-600 hover:underline font-bold cursor-pointer">Active Regions</span>
           </div>
           
           {/* Vector graphic of regions */}
@@ -648,36 +584,29 @@ const DivisionalAgents = () => {
       {/* Quick Actions Footer Panel */}
       <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
         <h3 className="text-base font-bold text-slate-800 mb-4">Quick Actions</h3>
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-          <button
-            onClick={() => setShowModal(true)}
-            className="bg-slate-50 hover:bg-slate-100/80 border border-slate-200 rounded-xl p-3.5 flex flex-col items-center justify-center text-center transition gap-2 group"
-          >
-            <Plus className="w-5 h-5 text-blue-600 group-hover:scale-110 transition duration-200" />
-            <span className="text-xs font-bold text-slate-700 uppercase leading-none mt-1">Create Agent</span>
-          </button>
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
           
-          <button className="bg-slate-50 hover:bg-slate-100/80 border border-slate-200 rounded-xl p-3.5 flex flex-col items-center justify-center text-center transition gap-2 group">
+          <button onClick={() => navigate('/reports')} className="bg-slate-50 hover:bg-slate-100/80 border border-slate-200 rounded-xl p-3.5 flex flex-col items-center justify-center text-center transition gap-2 group">
             <Download className="w-5 h-5 text-emerald-600 group-hover:scale-110 transition duration-200" />
             <span className="text-xs font-bold text-slate-700 uppercase leading-none mt-1">Export Report</span>
           </button>
 
-          <button className="bg-slate-50 hover:bg-slate-100/80 border border-slate-200 rounded-xl p-3.5 flex flex-col items-center justify-center text-center transition gap-2 group">
+          <button onClick={() => navigate('/notifications')} className="bg-slate-50 hover:bg-slate-100/80 border border-slate-200 rounded-xl p-3.5 flex flex-col items-center justify-center text-center transition gap-2 group">
             <Send className="w-5 h-5 text-purple-600 group-hover:scale-110 transition duration-200" />
             <span className="text-xs font-bold text-slate-700 uppercase leading-none mt-1">Send Notification</span>
           </button>
 
-          <button className="bg-slate-50 hover:bg-slate-100/80 border border-slate-200 rounded-xl p-3.5 flex flex-col items-center justify-center text-center transition gap-2 group">
+          <button onClick={() => setSelectedDivision('All Divisions')} className="bg-slate-50 hover:bg-slate-100/80 border border-slate-200 rounded-xl p-3.5 flex flex-col items-center justify-center text-center transition gap-2 group">
             <Layers className="w-5 h-5 text-orange-600 group-hover:scale-110 transition duration-200" />
             <span className="text-xs font-bold text-slate-700 uppercase leading-none mt-1">Assign Division</span>
           </button>
 
-          <button className="bg-slate-50 hover:bg-slate-100/80 border border-slate-200 rounded-xl p-3.5 flex flex-col items-center justify-center text-center transition gap-2 group">
+          <button onClick={() => navigate('/analytics')} className="bg-slate-50 hover:bg-slate-100/80 border border-slate-200 rounded-xl p-3.5 flex flex-col items-center justify-center text-center transition gap-2 group">
             <BarChart2 className="w-5 h-5 text-teal-600 group-hover:scale-110 transition duration-200" />
             <span className="text-xs font-bold text-slate-700 uppercase leading-none mt-1">View Analytics</span>
           </button>
 
-          <button className="bg-slate-50 hover:bg-slate-100/80 border border-slate-200 rounded-xl p-3.5 flex flex-col items-center justify-center text-center transition gap-2 group">
+          <button onClick={() => navigate('/reports')} className="bg-slate-50 hover:bg-slate-100/80 border border-slate-200 rounded-xl p-3.5 flex flex-col items-center justify-center text-center transition gap-2 group">
             <Upload className="w-5 h-5 text-rose-600 group-hover:scale-110 transition duration-200" />
             <span className="text-xs font-bold text-slate-700 uppercase leading-none mt-1">Upload Document</span>
           </button>

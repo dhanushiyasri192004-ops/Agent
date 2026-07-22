@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { login, reset } from '../../redux/slices/authSlice.js';
 import { Lock, Mail, ShieldAlert, Award } from 'lucide-react';
 import axios from 'axios';
@@ -97,9 +97,14 @@ const Login = () => {
 
         {/* Status Error Display */}
         {isError && (
-          <div className="mb-6 bg-red-950/50 border border-red-800/80 text-red-200 text-sm px-4 py-3 rounded-lg flex items-center gap-2">
+          <div className="mb-6 bg-red-950/70 border border-red-800 text-red-200 text-xs p-4 rounded-xl flex items-center gap-3 shadow-lg">
             <ShieldAlert className="w-5 h-5 text-red-500 shrink-0" />
-            <span>{message || 'Invalid credentials'}</span>
+            <div>
+              <span className="font-bold block">{message || 'Invalid email or password'}</span>
+              <span className="text-[11px] text-slate-300 font-normal">
+                Please check your credentials or <Link to="/register" className="text-forge-gold font-bold hover:underline">Register as Agent</Link> to create an account.
+              </span>
+            </div>
           </div>
         )}
 
@@ -151,6 +156,12 @@ const Login = () => {
               >
                 Forgot Password?
               </button>
+              <Link
+                to="/register"
+                className="text-forge-grayText hover:text-white hover:underline font-medium transition"
+              >
+                Register as Agent
+              </Link>
             </div>
 
             <button
@@ -160,19 +171,6 @@ const Login = () => {
             >
               {isLoading ? 'Signing In...' : 'Login Securely'}
             </button>
-
-            {/* Quick Demo Credentials Panel */}
-            <div className="mt-8 pt-6 border-t border-forge-card/50">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-forge-gold mb-2">
-                Demo Accounts (Password: password123)
-              </h3>
-              <div className="grid grid-cols-2 gap-2 text-[10px] text-forge-grayText">
-                <div>State: <span className="text-white block font-medium">stateagent@forgeindia.com</span></div>
-                <div>Division: <span className="text-white block font-medium">divisionagent@forgeindia.com</span></div>
-                <div>District: <span className="text-white block font-medium">districtagent@forgeindia.com</span></div>
-                <div>Pincode: <span className="text-white block font-medium">pincodeagent@forgeindia.com</span></div>
-              </div>
-            </div>
           </form>
         ) : (
           <form onSubmit={handleForgotPasswordSubmit} className="space-y-5">

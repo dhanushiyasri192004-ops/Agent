@@ -53,48 +53,47 @@ const DistrictDashboard = () => {
     );
   }
 
-  const pincodesCount = metrics?.pincodesCount || 24;
-  const pincodeAgentsCount = metrics?.pincodeAgentsCount || 85;
-  const shopsCount = metrics?.shopsRegisteredCount || 210;
-  const reportsCount = metrics?.reportsSubmittedCount || 18;
+
+
+  const assignedDistrict = metrics?.district || user?.agentInfo?.district || user?.district || (user?.name?.includes('Salem') ? 'Salem District' : 'Salem District');
+  const displayDistrictTitle = assignedDistrict.toLowerCase().includes('agent') ? assignedDistrict : `${assignedDistrict} Agent`;
+
+  const pincodesCount = metrics?.pincodesCount || 0;
+  const pincodeAgentsCount = metrics?.pincodeAgentsCount || 0;
+  const shopsCount = metrics?.shopsRegisteredCount || 0;
+  const reportsCount = metrics?.reportsSubmittedCount || 0;
 
   const lineChartData = [
-    { name: 'May 12', performance: 25 },
-    { name: 'May 13', performance: 48 },
-    { name: 'May 14', performance: 38 },
-    { name: 'May 15', performance: 62 },
-    { name: 'May 16', performance: 55 },
-    { name: 'May 17', performance: 72 },
-    { name: 'May 18', performance: 90 },
+    { name: 'May 12', performance: shopsCount > 0 ? 25 : 0 },
+    { name: 'May 13', performance: shopsCount > 0 ? 48 : 0 },
+    { name: 'May 14', performance: shopsCount > 0 ? 38 : 0 },
+    { name: 'May 15', performance: shopsCount > 0 ? 62 : 0 },
+    { name: 'May 16', performance: shopsCount > 0 ? 55 : 0 },
+    { name: 'May 17', performance: shopsCount > 0 ? 72 : 0 },
+    { name: 'May 18', performance: shopsCount > 0 ? 90 : 0 },
   ];
 
   const pieData = [
-    { name: 'Active', value: 70, color: '#10b981' },
-    { name: 'Inactive', value: 8, color: '#94a3b8' },
-    { name: 'Suspended', value: 7, color: '#ef4444' },
+    { name: 'Active', value: pincodeAgentsCount, color: '#10b981' },
+    { name: 'Pending', value: 0, color: '#f59e0b' },
+    { name: 'Inactive', value: 0, color: '#94a3b8' },
   ];
 
   const reportsPieData = [
-    { name: 'Submitted', value: 20, color: '#10b981' },
-    { name: 'Pending', value: 10, color: '#f59e0b' },
-    { name: 'Rejected', value: 5, color: '#ef4444' },
+    { name: 'Submitted', value: reportsCount, color: '#10b981' },
+    { name: 'Pending', value: 0, color: '#f59e0b' },
+    { name: 'Rejected', value: 0, color: '#ef4444' },
   ];
 
-  const mockPincodeOverview = [
-    { pin: '641001', shops: 120 },
-    { pin: '641002', shops: 98 },
-    { pin: '641003', shops: 85 },
-    { pin: '641004', shops: 75 },
-    { pin: '641005', shops: 66 },
-  ];
+  const pincodeOverview = metrics?.pincodeOverview || [];
 
   return (
     <div className="space-y-6">
       
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-black text-slate-800">Welcome back, Coimbatore District Agent 👋</h1>
-        <p className="text-sm text-slate-500 mt-1 font-semibold">District level progress monitoring dashboard.</p>
+        <h1 className="text-2xl font-black text-slate-800">Welcome back, {displayDistrictTitle} 👋</h1>
+        <p className="text-sm text-slate-500 mt-1 font-semibold">District level progress monitoring dashboard for {assignedDistrict}.</p>
       </div>
 
       {/* Stats Cards */}
@@ -148,7 +147,7 @@ const DistrictDashboard = () => {
         {/* District Performance Line Chart */}
         <div className="lg:col-span-2 bg-white border border-slate-200/80 rounded-xl p-5 shadow-sm flex flex-col">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-base font-bold text-slate-800">District Performance</h3>
+            <h3 className="text-base font-bold text-slate-800">{assignedDistrict} Performance</h3>
             <span className="text-xs text-forge-gold font-bold uppercase border border-forge-gold/30 bg-amber-50 px-2 py-0.5 rounded">This Week</span>
           </div>
           <div className="flex-1 h-60 min-h-[240px]">
@@ -169,19 +168,25 @@ const DistrictDashboard = () => {
           <div>
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-base font-bold text-slate-800">Pincode Overview</h3>
-              <button className="text-xs text-forge-gold hover:underline font-bold">View All</button>
+              <span className="text-xs text-slate-400 font-bold">{assignedDistrict}</span>
             </div>
-            <div className="space-y-4">
-              {mockPincodeOverview.map((p, idx) => (
-                <div key={idx} className="flex items-center justify-between text-sm border-b border-slate-100 pb-3 last:border-0 last:pb-0">
-                  <div className="flex items-center gap-2">
-                    <MapPin className="w-4 h-4 text-forge-gold" />
-                    <span className="font-bold text-slate-700">{p.pin}</span>
+            {pincodeOverview.length === 0 ? (
+              <div className="py-12 text-center text-xs text-slate-400 font-bold border border-dashed border-slate-200 rounded-xl">
+                No pincodes registered in {assignedDistrict} yet.
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {pincodeOverview.map((p, idx) => (
+                  <div key={idx} className="flex items-center justify-between text-sm border-b border-slate-100 pb-3 last:border-0 last:pb-0">
+                    <div className="flex items-center gap-2">
+                      <MapPin className="w-4 h-4 text-forge-gold" />
+                      <span className="font-bold text-slate-700">{p.pin}</span>
+                    </div>
+                    <span className="font-bold text-slate-400">{p.shops} Shops</span>
                   </div>
-                  <span className="font-bold text-slate-400">{p.shops} Shops</span>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 
@@ -193,93 +198,109 @@ const DistrictDashboard = () => {
         {/* Pincode Agent Distribution */}
         <div className="bg-white border border-slate-200/80 rounded-xl p-5 shadow-sm flex flex-col items-center justify-between">
           <h3 className="text-base font-bold text-slate-800 w-full text-left mb-4">Pincode Agent Distribution</h3>
-          <div className="h-44 w-full flex items-center justify-center">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={pieData}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={60}
-                  outerRadius={80}
-                  paddingAngle={5}
-                  dataKey="value"
-                >
-                  {pieData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
-                </Pie>
-                <Tooltip />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
-          <div className="w-full flex flex-wrap justify-center gap-x-4 gap-y-1 text-sm mt-4">
-            {pieData.map((p, idx) => (
-              <div key={idx} className="flex items-center gap-1">
-                <span className="w-2 h-2 rounded-full" style={{ backgroundColor: p.color }}></span>
-                <span className="text-slate-500 font-bold">{p.name} ({p.value})</span>
+          {pincodeAgentsCount === 0 ? (
+            <div className="py-12 text-center text-xs text-slate-400 font-bold border border-dashed border-slate-200 rounded-xl w-full">
+              No pincode agents registered in {assignedDistrict} yet.
+            </div>
+          ) : (
+            <>
+              <div className="h-44 w-full flex items-center justify-center">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={pieData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={60}
+                      outerRadius={80}
+                      paddingAngle={5}
+                      dataKey="value"
+                    >
+                      {pieData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip />
+                  </PieChart>
+                </ResponsiveContainer>
               </div>
-            ))}
-          </div>
+              <div className="w-full flex flex-wrap justify-center gap-x-4 gap-y-1 text-sm mt-4">
+                {pieData.map((p, idx) => (
+                  <div key={idx} className="flex items-center gap-1">
+                    <span className="w-2 h-2 rounded-full" style={{ backgroundColor: p.color }}></span>
+                    <span className="text-slate-500 font-bold">{p.name} ({p.value})</span>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
         </div>
 
         {/* Reports Overview */}
         <div className="bg-white border border-slate-200/80 rounded-xl p-5 shadow-sm flex flex-col items-center justify-between">
           <h3 className="text-base font-bold text-slate-800 w-full text-left mb-4">Reports Overview</h3>
-          <div className="h-44 w-full flex items-center justify-center">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={reportsPieData}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={60}
-                  outerRadius={80}
-                  paddingAngle={5}
-                  dataKey="value"
-                >
-                  {reportsPieData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
-                </Pie>
-                <Tooltip />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
-          <div className="w-full flex flex-wrap justify-center gap-x-4 gap-y-1 text-sm mt-4">
-            {reportsPieData.map((p, idx) => (
-              <div key={idx} className="flex items-center gap-1">
-                <span className="w-2 h-2 rounded-full" style={{ backgroundColor: p.color }}></span>
-                <span className="text-slate-500 font-bold">{p.name} ({p.value})</span>
+          {reportsCount === 0 ? (
+            <div className="py-12 text-center text-xs text-slate-400 font-bold border border-dashed border-slate-200 rounded-xl w-full">
+              No reports submitted in {assignedDistrict} yet.
+            </div>
+          ) : (
+            <>
+              <div className="h-44 w-full flex items-center justify-center">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={reportsPieData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={60}
+                      outerRadius={80}
+                      paddingAngle={5}
+                      dataKey="value"
+                    >
+                      {reportsPieData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip />
+                  </PieChart>
+                </ResponsiveContainer>
               </div>
-            ))}
-          </div>
+              <div className="w-full flex flex-wrap justify-center gap-x-4 gap-y-1 text-sm mt-4">
+                {reportsPieData.map((p, idx) => (
+                  <div key={idx} className="flex items-center gap-1">
+                    <span className="w-2 h-2 rounded-full" style={{ backgroundColor: p.color }}></span>
+                    <span className="text-slate-500 font-bold">{p.name} ({p.value})</span>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
         </div>
 
         {/* Top Performing Pincodes */}
         <div className="bg-white border border-slate-200/80 rounded-xl p-5 shadow-sm flex flex-col justify-between">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-base font-bold text-slate-800">Top Performing Pincodes</h3>
-            <span className="text-xs text-forge-gold font-bold uppercase">This Week</span>
+            <span className="text-xs text-forge-gold font-bold uppercase">{assignedDistrict}</span>
           </div>
-          <div className="space-y-3.5 flex-1">
-            {[
-              { rank: 1, pin: '641001', score: '94%' },
-              { rank: 2, pin: '641002', score: '86%' },
-              { rank: 3, pin: '641003', score: '78%' },
-              { rank: 4, pin: '641004', score: '65%' },
-              { rank: 5, pin: '641005', score: '55%' }
-            ].map((p) => (
-              <div key={p.rank} className="flex items-center gap-3 text-sm">
-                <span className="w-5 font-bold text-slate-400 text-center">{p.rank}</span>
-                <span className="flex-1 font-bold text-slate-700">{p.pin}</span>
-                <div className="w-24 bg-slate-100 h-2 rounded-full overflow-hidden">
-                  <div className="bg-forge-gold h-full rounded-full" style={{ width: p.score }}></div>
+          {pincodeOverview.length === 0 ? (
+            <div className="py-12 text-center text-xs text-slate-400 font-bold border border-dashed border-slate-200 rounded-xl flex-1 flex items-center justify-center">
+              No pincode activity logged in {assignedDistrict} yet.
+            </div>
+          ) : (
+            <div className="space-y-3.5 flex-1">
+              {pincodeOverview.slice(0, 5).map((p, idx) => (
+                <div key={idx} className="flex items-center gap-3 text-sm">
+                  <span className="w-5 font-bold text-slate-400 text-center">{idx + 1}</span>
+                  <span className="flex-1 font-bold text-slate-700">{p.pin}</span>
+                  <div className="w-24 bg-slate-100 h-2 rounded-full overflow-hidden">
+                    <div className="bg-forge-gold h-full rounded-full" style={{ width: '100%' }}></div>
+                  </div>
+                  <span className="w-8 font-bold text-right text-forge-gold">100%</span>
                 </div>
-                <span className="w-8 font-bold text-right text-forge-gold">{p.score}</span>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
 
       </div>

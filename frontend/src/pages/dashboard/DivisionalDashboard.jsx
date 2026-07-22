@@ -54,10 +54,82 @@ const DivisionalDashboard = () => {
     );
   }
 
-  const districtsCount = metrics?.districtsCount || 6;
-  const districtAgentsCount = metrics?.districtAgentsCount || 45;
-  const pincodeAgentsCount = metrics?.pincodeAgentsCount || 320;
-  const shopsCount = metrics?.shopsRegisteredCount || 820;
+  const divisionDistrictMap = {
+    'chennai': [
+      { name: 'Chennai', pincodes: 150, shops: '2,450' },
+      { name: 'Chengalpattu', pincodes: 95, shops: '1,850' },
+      { name: 'Kanchipuram', pincodes: 80, shops: '1,200' },
+      { name: 'Tiruvallur', pincodes: 75, shops: '900' }
+    ],
+    'vellore': [
+      { name: 'Vellore', pincodes: 90, shops: '1,500' },
+      { name: 'Ranipet', pincodes: 65, shops: '1,100' },
+      { name: 'Tirupathur', pincodes: 55, shops: '850' },
+      { name: 'Tiruvannamalai', pincodes: 70, shops: '950' }
+    ],
+    'salem': [
+      { name: 'Salem', pincodes: 110, shops: '2,100' },
+      { name: 'Namakkal', pincodes: 75, shops: '1,300' },
+      { name: 'Dharmapuri', pincodes: 60, shops: '950' },
+      { name: 'Krishnagiri', pincodes: 70, shops: '1,050' }
+    ],
+    'coimbatore': [
+      { name: 'Coimbatore', pincodes: 120, shops: '2,450' },
+      { name: 'Tiruppur', pincodes: 85, shops: '1,850' },
+      { name: 'Erode', pincodes: 60, shops: '1,200' },
+      { name: 'The Nilgiris', pincodes: 55, shops: '900' }
+    ],
+    'tiruchirappalli': [
+      { name: 'Tiruchirappalli', pincodes: 100, shops: '1,950' },
+      { name: 'Karur', pincodes: 55, shops: '950' },
+      { name: 'Perambalur', pincodes: 40, shops: '650' },
+      { name: 'Ariyalur', pincodes: 45, shops: '700' }
+    ],
+    'thanjavur': [
+      { name: 'Thanjavur', pincodes: 95, shops: '1,750' },
+      { name: 'Tiruvarur', pincodes: 60, shops: '1,050' },
+      { name: 'Nagapattinam', pincodes: 55, shops: '900' },
+      { name: 'Mayiladuthurai', pincodes: 50, shops: '800' }
+    ],
+    'madurai': [
+      { name: 'Madurai', pincodes: 115, shops: '2,150' },
+      { name: 'Dindigul', pincodes: 80, shops: '1,450' },
+      { name: 'Theni', pincodes: 60, shops: '950' },
+      { name: 'Sivagangai', pincodes: 55, shops: '850' },
+      { name: 'Ramanathapuram', pincodes: 65, shops: '900' }
+    ],
+    'tirunelveli': [
+      { name: 'Tirunelveli', pincodes: 105, shops: '1,850' },
+      { name: 'Tenkasi', pincodes: 70, shops: '1,150' },
+      { name: 'Thoothukudi', pincodes: 75, shops: '1,250' },
+      { name: 'Kanniyakumari', pincodes: 80, shops: '1,350' },
+      { name: 'Virudhunagar', pincodes: 70, shops: '1,100' }
+    ]
+  };
+
+  const getDivisionKey = () => {
+    const div = user?.agentInfo?.division || 'Chennai';
+    return div.toLowerCase().replace(' division', '').trim();
+  };
+
+  const activeDivisionKey = getDivisionKey();
+  const mockDistrictBreakdown = divisionDistrictMap[activeDivisionKey] || divisionDistrictMap['chennai'];
+
+  const districtsCount = metrics?.districtsCount ?? 0;
+  const districtAgentsCount = metrics?.districtAgentsCount ?? 0;
+  const pincodeAgentsCount = metrics?.pincodeAgentsCount ?? 0;
+  const shopsCount = metrics?.shopsRegisteredCount ?? 0;
+
+  const liveDistrictBreakdown = mockDistrictBreakdown.map(d => {
+    const match = metrics?.districtPerformance?.find(
+      p => p.name?.toLowerCase() === d.name.toLowerCase()
+    );
+    return {
+      name: d.name,
+      pincodes: d.pincodes,
+      shops: match ? match.value : 0
+    };
+  });
 
   const lineChartData = [
     { name: 'May 12', performance: 20 },
@@ -70,17 +142,67 @@ const DivisionalDashboard = () => {
   ];
 
   const pieData = [
-    { name: 'District Agents', value: metrics?.agentDistribution?.districtAgents || 45, color: '#10b981' },
-    { name: 'Pincode Agents', value: metrics?.agentDistribution?.pincodeAgents || 320, color: '#f59e0b' },
+    { name: 'District Agents', value: metrics?.agentDistribution?.districtAgents || 0, color: '#10b981' },
+    { name: 'Pincode Agents', value: metrics?.agentDistribution?.pincodeAgents || 0, color: '#f59e0b' },
   ];
 
-  const mockDistrictBreakdown = [
-    { name: 'Coimbatore', pincodes: 120, shops: '2,450' },
-    { name: 'Tirupur', pincodes: 85, shops: '1,850' },
-    { name: 'Erode', pincodes: 60, shops: '1,200' },
-    { name: 'Nilgiris', pincodes: 55, shops: '900' },
-    { name: 'Karur', pincodes: 45, shops: '750' },
+  const topPerformingDistricts = mockDistrictBreakdown.map((d, index) => {
+    const scores = {
+      'chennai': '97%',
+      'chengalpattu': '92%',
+      'kanchipuram': '89%',
+      'tiruvallur': '86%',
+      'vellore': '90%',
+      'ranipet': '85%',
+      'tirupathur': '82%',
+      'tiruvannamalai': '80%',
+      'salem': '91%',
+      'namakkal': '88%',
+      'dharmapuri': '84%',
+      'krishnagiri': '81%',
+      'coimbatore': '95%',
+      'tiruppur': '91%',
+      'erode': '87%',
+      'the nilgiris': '83%',
+      'tiruchirappalli': '93%',
+      'karur': '88%',
+      'perambalur': '81%',
+      'ariyalur': '79%',
+      'thanjavur': '92%',
+      'tiruvarur': '86%',
+      'nagapattinam': '82%',
+      'mayiladuthurai': '80%',
+      'madurai': '94%',
+      'dindigul': '89%',
+      'theni': '83%',
+      'sivagangai': '81%',
+      'ramanathapuram': '78%',
+      'tirunelveli': '92%',
+      'tenkasi': '87%',
+      'thoothukudi': '85%',
+      'kanniyakumari': '83%',
+      'virudhunagar': '80%'
+    };
+    const key = d.name.toLowerCase();
+    return {
+      rank: index + 1,
+      name: d.name,
+      score: scores[key] || '85%'
+    };
+  });
+
+  const recentActivitiesList = [
+    { text: 'New district agent added in Chennai', time: '20 mins ago', division: 'chennai' },
+    { text: 'Pincode agent report submitted in Chengalpattu', time: '1 hour ago', division: 'chennai' },
+    { text: 'Shop verified in Kanchipuram', time: '2 hours ago', division: 'chennai' },
+    { text: 'New district agent added in Tirupur', time: '20 mins ago', division: 'coimbatore' },
+    { text: 'Pincode agent report submitted in Coimbatore', time: '1 hour ago', division: 'coimbatore' },
+    { text: 'Shop verified in Erode', time: '2 hours ago', division: 'coimbatore' },
+    { text: 'District agent query resolved in Salem', time: '3 hours ago', division: 'salem' },
+    { text: 'New shop registration in Madurai', time: '4 hours ago', division: 'madurai' }
   ];
+
+  const filteredActivities = recentActivitiesList.filter(act => act.division === activeDivisionKey);
 
   return (
     <div className="space-y-6">
@@ -166,7 +288,7 @@ const DivisionalDashboard = () => {
               <button className="text-xs text-forge-gold hover:underline font-bold">View All</button>
             </div>
             <div className="space-y-4">
-              {mockDistrictBreakdown.map((d, idx) => (
+              {liveDistrictBreakdown.map((d, idx) => (
                 <div key={idx} className="flex items-center justify-between text-sm border-b border-slate-100 pb-3 last:border-0 last:pb-0">
                   <div>
                     <h4 className="font-extrabold text-slate-700">{d.name}</h4>
@@ -237,33 +359,17 @@ const DivisionalDashboard = () => {
               ))
             ) : (
               <div className="space-y-4">
-                <div className="flex gap-3 text-sm border-b border-slate-100 pb-3">
-                  <div className="w-8 h-8 rounded-lg bg-slate-50 border border-slate-100 flex items-center justify-center shrink-0">
-                    <Clock className="w-4 h-4 text-forge-gold" />
+                {filteredActivities.map((act, idx) => (
+                  <div key={idx} className="flex gap-3 text-sm border-b border-slate-100 pb-3 last:border-0 last:pb-0">
+                    <div className="w-8 h-8 rounded-lg bg-slate-50 border border-slate-100 flex items-center justify-center shrink-0">
+                      <Clock className="w-4 h-4 text-forge-gold" />
+                    </div>
+                    <div>
+                      <p className="font-bold text-slate-700">{act.text}</p>
+                      <p className="text-xs text-slate-400 mt-0.5">{act.time}</p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="font-bold text-slate-700">New district agent added in Tirupur</p>
-                    <p className="text-xs text-slate-400 mt-0.5">20 mins ago</p>
-                  </div>
-                </div>
-                <div className="flex gap-3 text-sm border-b border-slate-100 pb-3">
-                  <div className="w-8 h-8 rounded-lg bg-slate-50 border border-slate-100 flex items-center justify-center shrink-0">
-                    <Clock className="w-4 h-4 text-forge-gold" />
-                  </div>
-                  <div>
-                    <p className="font-bold text-slate-700">Pincode agent report submitted</p>
-                    <p className="text-xs text-slate-400 mt-0.5">1 hour ago</p>
-                  </div>
-                </div>
-                <div className="flex gap-3 text-sm">
-                  <div className="w-8 h-8 rounded-lg bg-slate-50 border border-slate-100 flex items-center justify-center shrink-0">
-                    <Clock className="w-4 h-4 text-forge-gold" />
-                  </div>
-                  <div>
-                    <p className="font-bold text-slate-700">Shop verified in Erode</p>
-                    <p className="text-xs text-slate-400 mt-0.5">2 hours ago</p>
-                  </div>
-                </div>
+                ))}
               </div>
             )}
           </div>
@@ -276,13 +382,7 @@ const DivisionalDashboard = () => {
             <span className="text-xs text-forge-gold font-bold uppercase">This Week</span>
           </div>
           <div className="space-y-3.5 flex-1">
-            {[
-              { rank: 1, name: 'Coimbatore', score: '92%' },
-              { rank: 2, name: 'Tirupur', score: '87%' },
-              { rank: 3, name: 'Erode', score: '75%' },
-              { rank: 4, name: 'Nilgiris', score: '64%' },
-              { rank: 5, name: 'Karur', score: '56%' }
-            ].map((dist) => (
+            {topPerformingDistricts.map((dist) => (
               <div key={dist.rank} className="flex items-center gap-3 text-sm">
                 <span className="w-5 font-bold text-slate-400 text-center">{dist.rank}</span>
                 <span className="flex-1 font-bold text-slate-700">{dist.name}</span>

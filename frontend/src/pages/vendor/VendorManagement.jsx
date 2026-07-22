@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import api from '../../services/api';
 import {
   Users, Plus, ShieldAlert, Check, X, Phone, Mail, Compass, MapPin, Store,
   FileCheck, FileText, Upload, Clock, Settings, Search, Filter, Edit2, Eye,
@@ -14,7 +15,7 @@ const VendorManagement = () => {
   const [showModal, setShowModal] = useState(false);
   const location = useLocation();
   const queryParams = new URLSearchParams(location.search);
-  const activeTab = queryParams.get('tab') || 'overview';
+  const activeTab = queryParams.get('tab') || 'list';
 
   // Filters
   const [searchTerm, setSearchTerm] = useState('');
@@ -33,48 +34,40 @@ const VendorManagement = () => {
   const [success, setSuccess] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
-  // Mock Data arrays matching the layouts
-  const mockVendorsList = [
-    { id: 'VEN10001', name: 'Rajesh Kumar', phone: '+91 98765 43210', district: 'Chennai', pincode: '600001', category: 'Electronics', agent: 'Karthik S', status: 'Active', email: 'rajesh@gmail.com' },
-    { id: 'VEN10002', name: 'Priya M', phone: '+91 91234 56789', district: 'Coimbatore', pincode: '641001', category: 'Hardware', agent: 'Monica R', status: 'Active', email: 'priya@gmail.com' },
-    { id: 'VEN10003', name: 'Suresh B', phone: '+91 99887 76655', district: 'Madurai', pincode: '625001', category: 'Medical', agent: 'Suresh B', status: 'Active', email: 'suresh@gmail.com' },
-    { id: 'VEN10004', name: 'Anitha P', phone: '+91 87654 32109', district: 'Salem', pincode: '636001', category: 'Clothing', agent: 'Deepak K', status: 'Inactive', email: 'anitha@gmail.com' },
-    { id: 'VEN10005', name: 'Vijay R', phone: '+91 90012 34567', district: 'Trichy', pincode: '620001', category: 'Stationery', agent: 'Vijayalakshmi', status: 'Active', email: 'vijay@gmail.com' }
-  ];
+  const [vendors, setVendors] = useState([]);
+  const [queries, setQueries] = useState([]);
+  const [complaints, setComplaints] = useState([]);
+  const [serviceRequests, setServiceRequests] = useState([]);
+  const [feedbacks, setFeedbacks] = useState([]);
 
-  const mockQueries = [
-    { id: 'QRY12001', vendor: 'Rajesh Kumar', phone: '+91 98765 43210', type: 'Pricing', priority: 'High', status: 'Open', agent: 'Karthik S', date: '15 May 2025' },
-    { id: 'QRY12002', vendor: 'Priya M', phone: '+91 91234 56789', type: 'Delivery', priority: 'High', status: 'Open', agent: 'Monica R', date: '15 May 2025' },
-    { id: 'QRY12003', vendor: 'Suresh B', phone: '+91 99887 76655', type: 'Product', priority: 'Low', status: 'Resolved', agent: 'Suresh B', date: '15 May 2025' },
-    { id: 'QRY12004', vendor: 'Anitha P', phone: '+91 87654 32109', type: 'Service', priority: 'High', status: 'Open', agent: 'Deepak K', date: '15 May 2025' },
-    { id: 'QRY12005', vendor: 'Vijay R', phone: '+91 90012 34567', type: 'Billing', priority: 'Medium', status: 'Pending', agent: 'Vijayalakshmi', date: '15 May 2025' }
-  ];
+  useEffect(() => {
+    fetchShops();
+  }, []);
 
-  const mockComplaints = [
-    { id: 'CMP22001', vendor: 'Rajesh Kumar', category: 'Product', priority: 'High', status: 'Open', agent: 'Karthik S', date: '15 May 2025' },
-    { id: 'CMP22002', vendor: 'Priya M', category: 'Delivery', priority: 'High', status: 'Open', agent: 'Monica R', date: '15 May 2025' },
-    { id: 'CMP22003', vendor: 'Suresh B', category: 'Billing', priority: 'Low', status: 'Resolved', agent: 'Suresh B', date: '15 May 2025' },
-    { id: 'CMP22004', vendor: 'Anitha P', category: 'Service', priority: 'High', status: 'Open', agent: 'Deepak K', date: '15 May 2025' },
-    { id: 'CMP22005', vendor: 'Vijay R', category: 'Quality', priority: 'Medium', status: 'Pending', agent: 'Vijayalakshmi', date: '15 May 2025' }
-  ];
-
-  const mockServiceRequests = [
-    { id: 'SRV32001', vendor: 'Rajesh Kumar', type: 'AC Service', priority: 'High', status: 'In Progress', agent: 'Karthik S', date: '15 May 2025' },
-    { id: 'SRV32002', vendor: 'Priya M', type: 'Electrical', priority: 'Medium', status: 'Completed', agent: 'Monica R', date: '15 May 2025' },
-    { id: 'SRV32003', vendor: 'Suresh B', type: 'Plumbing', priority: 'Low', status: 'Completed', agent: 'Suresh B', date: '15 May 2025' },
-    { id: 'SRV32004', vendor: 'Anitha P', type: 'Washing Machine', priority: 'High', status: 'Pending', agent: 'Deepak K', date: '15 May 2025' },
-    { id: 'SRV32005', vendor: 'Vijay R', type: 'RO Purifier', priority: 'Medium', status: 'Pending', agent: 'Vijayalakshmi', date: '15 May 2025' }
-  ];
-
-  const mockFeedbacks = [
-    { id: 'FDB42001', vendor: 'Rajesh Kumar', rating: 5, comment: 'Excellent service and response time', type: 'AC Service', date: '15 May 2025' },
-    { id: 'FDB42002', vendor: 'Priya M', rating: 4, comment: 'Good response time', type: 'Electrical', date: '15 May 2025' },
-    { id: 'FDB42003', vendor: 'Suresh B', rating: 5, comment: 'Very professional team', type: 'Plumbing', date: '15 May 2025' },
-    { id: 'FDB42004', vendor: 'Anitha P', rating: 3, comment: 'Need improvement in quality', type: 'Washing Machine', date: '15 May 2025' },
-    { id: 'FDB42005', vendor: 'Vijay R', rating: 5, comment: 'Good support', type: 'RO Purifier', date: '15 May 2025' }
-  ];
-
-  const [vendors, setVendors] = useState(mockVendorsList);
+  const fetchShops = async () => {
+    try {
+      const response = await api.get('/api/shops');
+      if (Array.isArray(response.data)) {
+        const formattedShops = response.data.map((shop, idx) => ({
+          id: shop._id || `VEN_${idx}`,
+          name: shop.shopName,
+          phone: shop.contactNumber || 'N/A',
+          district: shop.district || 'Unassigned',
+          pincode: shop.pincode || 'Unassigned',
+          category: shop.businessCategory || 'General',
+          agent: shop.createdBy?.name || 'Agent',
+          status: shop.verificationStatus || 'Pending Approval',
+          email: shop.ownerName || shop.shopName
+        }));
+        setVendors(formattedShops);
+      } else {
+        setVendors([]);
+      }
+    } catch (err) {
+      console.error('Error fetching shops:', err);
+      setVendors([]);
+    }
+  };
 
   const handleStatusToggle = (id) => {
     setVendors(prev => prev.map(c => c.id === id ? { ...c, status: c.status === 'Active' ? 'Inactive' : 'Active' } : c));
@@ -174,14 +167,14 @@ const VendorManagement = () => {
       {/* Grid of 8 Stats Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-3">
         {[
-          { label: 'Total Vendors', value: '8,75,231', sub: 'View all vendors', color: 'text-blue-600', icon: Users },
-          { label: 'Active Vendors', value: '8,10,450', sub: '92.61% of total', color: 'text-emerald-600', icon: Users },
-          { label: 'New Vendors', value: '245', sub: 'View new vendors', color: 'text-indigo-600', icon: Users },
-          { label: 'Vendor Queries', value: '1,268', sub: 'View all queries', color: 'text-amber-600', icon: MessageSquare },
-          { label: 'Open Complaints', value: '156', sub: 'View complaints', color: 'text-rose-600', icon: ShieldAlert },
-          { label: 'Resolved', value: '1,112', sub: 'View resolved', color: 'text-teal-600', icon: Check },
-          { label: 'VSAT Rate', value: '94%', sub: 'View feedback', color: 'text-blue-600', icon: Star },
-          { label: 'Service Requests', value: '12,845', sub: 'View requests', color: 'text-slate-500', icon: FileText }
+          { label: 'Total Vendors', value: vendors.length.toLocaleString(), sub: 'View all vendors', color: 'text-blue-600', icon: Users },
+          { label: 'Active Vendors', value: vendors.filter(v => v.status === 'Active' || v.status === 'Verified').length.toLocaleString(), sub: 'Active vendors', color: 'text-emerald-600', icon: Users },
+          { label: 'Pending Approval', value: vendors.filter(v => v.status === 'Pending Approval' || v.status === 'Pending').length.toLocaleString(), sub: 'Pending approval', color: 'text-amber-600', icon: Clock },
+          { label: 'Inactive Vendors', value: vendors.filter(v => v.status === 'Inactive').length.toLocaleString(), sub: 'Inactive vendors', color: 'text-rose-600', icon: Users },
+          { label: 'Vendor Queries', value: queries.length.toLocaleString(), sub: 'View all queries', color: 'text-amber-600', icon: MessageSquare },
+          { label: 'Open Complaints', value: complaints.length.toLocaleString(), sub: 'View complaints', color: 'text-rose-600', icon: ShieldAlert },
+          { label: 'Service Requests', value: serviceRequests.length.toLocaleString(), sub: 'View requests', color: 'text-slate-500', icon: FileText },
+          { label: 'Feedback Ratings', value: feedbacks.length.toLocaleString(), sub: 'View feedback', color: 'text-purple-600', icon: Star }
         ].map((card, idx) => (
           <div key={idx} className="bg-white border border-slate-200 rounded-xl p-3.5 shadow-sm flex flex-col justify-between">
             <div className="flex items-center justify-between">
@@ -280,14 +273,40 @@ const VendorManagement = () => {
                       <td className="p-4 font-mono text-slate-500">{cust.pincode}</td>
                       <td className="p-4 text-slate-600">{cust.agent}</td>
                       <td className="p-4">
-                        <span
-                          onClick={() => handleStatusToggle(cust.id)}
-                          className={`px-2.5 py-0.5 rounded-full text-xs font-bold border cursor-pointer select-none transition ${
-                            cust.status === 'Active' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-rose-50 text-rose-600 border-rose-100'
-                          }`}
-                        >
-                          {cust.status}
-                        </span>
+                        {cust.status === 'Pending Approval' ? (
+                          <div className="flex items-center gap-1.5">
+                            <button
+                              onClick={() => {
+                                setVendors(prev => prev.map(v => v.id === cust.id ? { ...v, status: 'Active' } : v));
+                                alert(`Vendor ${cust.name} approved & activated!`);
+                              }}
+                              className="bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-extrabold px-2.5 py-1 rounded shadow transition"
+                            >
+                              Approve
+                            </button>
+                            <button
+                              onClick={() => {
+                                const reason = prompt('Enter rejection reason for Pincode Agent:', 'License proof image unclear');
+                                if (reason) {
+                                  setVendors(prev => prev.map(v => v.id === cust.id ? { ...v, status: `Rejected (${reason})` } : v));
+                                  alert(`Vendor ${cust.name} rejected and returned to agent with reason: "${reason}"`);
+                                }
+                              }}
+                              className="bg-rose-600 hover:bg-rose-700 text-white text-[10px] font-extrabold px-2.5 py-1 rounded shadow transition"
+                            >
+                              Reject
+                            </button>
+                          </div>
+                        ) : (
+                          <span
+                            onClick={() => handleStatusToggle(cust.id)}
+                            className={`px-2.5 py-0.5 rounded-full text-xs font-bold border cursor-pointer select-none transition ${
+                              cust.status === 'Active' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : cust.status.startsWith('Rejected') ? 'bg-rose-50 text-rose-600 border-rose-100' : 'bg-amber-50 text-amber-600 border-amber-100'
+                            }`}
+                          >
+                            {cust.status}
+                          </span>
+                        )}
                       </td>
                       <td className="p-4 text-center">
                         <div className="flex items-center justify-center gap-2 text-slate-400">
@@ -310,7 +329,7 @@ const VendorManagement = () => {
             <h3 className="text-base font-bold text-slate-800">Vendor Query Overview</h3>
             <div className="flex flex-col items-center justify-center min-h-[160px]">
               <div className="w-28 h-28 rounded-full border-8 border-slate-100 flex items-center justify-center flex-col">
-                <span className="text-lg font-black text-slate-800">1,268</span>
+                <span className="text-lg font-black text-slate-800">{queries.length}</span>
                 <span className="text-[10px] text-slate-400 font-bold uppercase">Queries</span>
               </div>
             </div>
@@ -319,19 +338,18 @@ const VendorManagement = () => {
           <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm space-y-4">
             <h3 className="text-base font-bold text-slate-800">Recent Vendor Activities</h3>
             <div className="space-y-4">
-              {[
-                { text: 'New vendor Arjun K registered', time: 'Today, 10:30 AM', color: 'bg-blue-500' },
-                { text: 'Complaint #CMP1234 submitted by Priya M', time: 'Today, 09:45 AM', color: 'bg-emerald-500' },
-                { text: 'Service request #SR5678 completed', time: 'Today, 08:20 AM', color: 'bg-indigo-500' }
-              ].map((act, idx) => (
+              {vendors.slice(0, 3).map((v, idx) => (
                 <div key={idx} className="flex gap-3 text-xs">
-                  <div className={`w-1.5 h-1.5 rounded-full mt-1.5 shrink-0 ${act.color}`}></div>
+                  <div className="w-1.5 h-1.5 rounded-full mt-1.5 shrink-0 bg-blue-500"></div>
                   <div>
-                    <p className="font-bold text-slate-700 leading-snug">{act.text}</p>
-                    <p className="text-[10px] text-slate-400 font-medium mt-0.5">{act.time}</p>
+                    <p className="font-bold text-slate-700 leading-snug">Vendor {v.name} registered</p>
+                    <p className="text-[10px] text-slate-400 font-medium mt-0.5">District: {v.district}</p>
                   </div>
                 </div>
               ))}
+              {vendors.length === 0 && (
+                <p className="text-xs text-slate-400 font-semibold">No recent vendor activity.</p>
+              )}
             </div>
           </div>
         </div>
@@ -358,10 +376,10 @@ const VendorManagement = () => {
       {/* 4 Stats Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { label: 'Total Vendors', value: '8,75,231', color: 'bg-blue-50 border-blue-100 text-blue-600' },
-          { label: 'Active Vendors', value: '8,10,450', color: 'bg-emerald-50 border-emerald-100 text-emerald-600' },
-          { label: 'New Vendors', value: '245', color: 'bg-indigo-50 border-indigo-100 text-indigo-600' },
-          { label: 'Inactive Vendors', value: '64,781', color: 'bg-rose-50 border-rose-100 text-rose-600' }
+          { label: 'Total Vendors', value: vendors.length.toLocaleString(), color: 'bg-blue-50 border-blue-100 text-blue-600' },
+          { label: 'Active Vendors', value: vendors.filter(v => v.status === 'Active' || v.status === 'Verified').length.toLocaleString(), color: 'bg-emerald-50 border-emerald-100 text-emerald-600' },
+          { label: 'Pending Approval', value: vendors.filter(v => v.status === 'Pending Approval' || v.status === 'Pending').length.toLocaleString(), color: 'bg-indigo-50 border-indigo-100 text-indigo-600' },
+          { label: 'Inactive Vendors', value: vendors.filter(v => v.status === 'Inactive').length.toLocaleString(), color: 'bg-rose-50 border-rose-100 text-rose-600' }
         ].map((card, idx) => (
           <div key={idx} className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm flex items-center justify-between">
             <div>
@@ -457,12 +475,12 @@ const VendorManagement = () => {
       {/* 6 Stats Cards */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
         {[
-          { label: 'Total Queries', value: '1,268', color: 'bg-blue-50 text-blue-600' },
-          { label: 'Open', value: '336', color: 'bg-rose-50 text-rose-600' },
-          { label: 'In Progress', value: '285', color: 'bg-indigo-50 text-indigo-650' },
-          { label: 'Pending', value: '210', color: 'bg-amber-50 text-amber-600' },
-          { label: 'Resolved', value: '367', color: 'bg-emerald-50 text-emerald-600' },
-          { label: 'Escalated', value: '70', color: 'bg-red-50 text-red-600' }
+          { label: 'Total Queries', value: queries.length.toLocaleString(), color: 'bg-blue-50 text-blue-600' },
+          { label: 'Open', value: queries.filter(q => q.status === 'Open').length.toLocaleString(), color: 'bg-rose-50 text-rose-600' },
+          { label: 'In Progress', value: queries.filter(q => q.status === 'In Progress').length.toLocaleString(), color: 'bg-indigo-50 text-indigo-650' },
+          { label: 'Pending', value: queries.filter(q => q.status === 'Pending').length.toLocaleString(), color: 'bg-amber-50 text-amber-600' },
+          { label: 'Resolved', value: queries.filter(q => q.status === 'Resolved').length.toLocaleString(), color: 'bg-emerald-50 text-emerald-600' },
+          { label: 'Escalated', value: queries.filter(q => q.status === 'Escalated').length.toLocaleString(), color: 'bg-red-50 text-red-600' }
         ].map((card, idx) => (
           <div key={idx} className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm flex flex-col justify-between">
             <span className="text-[10px] font-bold text-slate-450 uppercase tracking-wider">{card.label}</span>
@@ -508,7 +526,7 @@ const VendorManagement = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {mockQueries.map((q) => (
+              {queries.map((q) => (
                 <tr key={q.id} className="hover:bg-slate-50/50 text-slate-600 font-bold transition">
                   <td className="p-4 font-mono text-slate-450">{q.id}</td>
                   <td className="p-4 text-slate-800 font-extrabold">{q.vendor}</td>
@@ -520,7 +538,7 @@ const VendorManagement = () => {
                   <td className="p-4">
                     <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold border ${q.status === 'Resolved' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-amber-50 text-amber-600 border-amber-100'}`}>{q.status}</span>
                   </td>
-                  <td className="p-4 text-slate-500">{q.agent}</td>
+                  <td className="p-4 text-slate-550">{q.agent}</td>
                   <td className="p-4 text-slate-500">{q.date}</td>
                   <td className="p-4 text-center">
                     <div className="flex items-center justify-center gap-2 text-slate-450">
@@ -530,6 +548,11 @@ const VendorManagement = () => {
                   </td>
                 </tr>
               ))}
+              {queries.length === 0 && (
+                <tr>
+                  <td colSpan={9} className="p-8 text-center text-slate-400 font-semibold">No vendor queries found.</td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
@@ -549,12 +572,12 @@ const VendorManagement = () => {
       {/* 6 Stats Cards */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
         {[
-          { label: 'Total Complaints', value: '1,468', color: 'text-blue-600' },
-          { label: 'Open', value: '156', color: 'text-rose-600' },
-          { label: 'In Progress', value: '328', color: 'text-indigo-600' },
-          { label: 'Pending', value: '210', color: 'text-amber-600' },
-          { label: 'Resolved', value: '1,112', color: 'text-emerald-600' },
-          { label: 'Escalated', value: '70', color: 'text-red-600' }
+          { label: 'Total Complaints', value: complaints.length.toLocaleString(), color: 'text-blue-600' },
+          { label: 'Open', value: complaints.filter(c => c.status === 'Open').length.toLocaleString(), color: 'text-rose-600' },
+          { label: 'In Progress', value: complaints.filter(c => c.status === 'In Progress').length.toLocaleString(), color: 'text-indigo-600' },
+          { label: 'Pending', value: complaints.filter(c => c.status === 'Pending').length.toLocaleString(), color: 'text-amber-600' },
+          { label: 'Resolved', value: complaints.filter(c => c.status === 'Resolved').length.toLocaleString(), color: 'text-emerald-600' },
+          { label: 'Escalated', value: complaints.filter(c => c.status === 'Escalated').length.toLocaleString(), color: 'text-red-600' }
         ].map((card, idx) => (
           <div key={idx} className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm flex flex-col justify-between">
             <span className="text-[10px] font-bold text-slate-450 uppercase tracking-wider">{card.label}</span>
@@ -598,7 +621,7 @@ const VendorManagement = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {mockComplaints.map((c) => (
+              {complaints.map((c) => (
                 <tr key={c.id} className="hover:bg-slate-50/50 text-slate-600 font-bold transition">
                   <td className="p-4 font-mono text-slate-450">{c.id}</td>
                   <td className="p-4 text-slate-800 font-extrabold">{c.vendor}</td>
@@ -619,6 +642,11 @@ const VendorManagement = () => {
                   </td>
                 </tr>
               ))}
+              {complaints.length === 0 && (
+                <tr>
+                  <td colSpan={8} className="p-8 text-center text-slate-400 font-semibold">No complaints found.</td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
@@ -628,35 +656,28 @@ const VendorManagement = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
         <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
           <h3 className="text-base font-bold text-slate-800 mb-4">Complaints by Category</h3>
-          <div className="h-56">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie data={[
-                  { name: 'Product', value: 345 },
-                  { name: 'Delivery', value: 210 },
-                  { name: 'Billing', value: 256 },
-                  { name: 'Service', value: 185 },
-                  { name: 'Quality', value: 148 }
-                ]} cx="50%" cy="50%" innerRadius={60} outerRadius={80} paddingAngle={5} dataKey="value">
-                  {COLORS.map((color, index) => <Cell key={`cell-${index}`} fill={color} />)}
-                </Pie>
-                <Tooltip />
-              </PieChart>
-            </ResponsiveContainer>
+          <div className="h-56 flex items-center justify-center text-slate-400 text-xs font-semibold">
+            {complaints.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie data={[
+                    { name: 'Product', value: complaints.filter(c => c.category === 'Product').length },
+                    { name: 'Delivery', value: complaints.filter(c => c.category === 'Delivery').length }
+                  ]} cx="50%" cy="50%" innerRadius={60} outerRadius={80} paddingAngle={5} dataKey="value">
+                    {COLORS.map((color, index) => <Cell key={`cell-${index}`} fill={color} />)}
+                  </Pie>
+                  <Tooltip />
+                </PieChart>
+              </ResponsiveContainer>
+            ) : (
+              'No complaint data available'
+            )}
           </div>
         </div>
         <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
           <h3 className="text-base font-bold text-slate-800 mb-4">Complaint Trend</h3>
-          <div className="h-56">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={regTrendData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                <XAxis dataKey="name" fontSize={9} stroke="#64748b" />
-                <YAxis fontSize={9} stroke="#64748b" />
-                <Tooltip />
-                <Line type="monotone" dataKey="Vendors" stroke="#ef4444" strokeWidth={2.5} dot={{ fill: '#ef4444' }} />
-              </LineChart>
-            </ResponsiveContainer>
+          <div className="h-56 flex items-center justify-center text-slate-400 text-xs font-semibold">
+            No complaint trend data available
           </div>
         </div>
       </div>
@@ -675,12 +696,12 @@ const VendorManagement = () => {
       {/* 6 Stats Cards */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
         {[
-          { label: 'Total Requests', value: '12,845', color: 'text-blue-600' },
-          { label: 'New Requests', value: '245', color: 'text-rose-600' },
-          { label: 'In Progress', value: '5,632', color: 'text-indigo-650' },
-          { label: 'Pending', value: '3,210', color: 'text-amber-600' },
-          { label: 'Completed', value: '3,458', color: 'text-emerald-600' },
-          { label: 'Cancelled', value: '300', color: 'text-slate-400' }
+          { label: 'Total Requests', value: serviceRequests.length.toLocaleString(), color: 'text-blue-600' },
+          { label: 'New Requests', value: serviceRequests.filter(s => s.status === 'New').length.toLocaleString(), color: 'text-rose-600' },
+          { label: 'In Progress', value: serviceRequests.filter(s => s.status === 'In Progress').length.toLocaleString(), color: 'text-indigo-650' },
+          { label: 'Pending', value: serviceRequests.filter(s => s.status === 'Pending').length.toLocaleString(), color: 'text-amber-600' },
+          { label: 'Completed', value: serviceRequests.filter(s => s.status === 'Completed').length.toLocaleString(), color: 'text-emerald-600' },
+          { label: 'Cancelled', value: serviceRequests.filter(s => s.status === 'Cancelled').length.toLocaleString(), color: 'text-slate-400' }
         ].map((card, idx) => (
           <div key={idx} className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm flex flex-col justify-between">
             <span className="text-[10px] font-bold text-slate-450 uppercase tracking-wider">{card.label}</span>
@@ -723,7 +744,7 @@ const VendorManagement = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {mockServiceRequests.map((s) => (
+              {serviceRequests.map((s) => (
                 <tr key={s.id} className="hover:bg-slate-50/50 text-slate-600 font-bold transition">
                   <td className="p-4 font-mono text-slate-450">{s.id}</td>
                   <td className="p-4 text-slate-800 font-extrabold">{s.vendor}</td>
@@ -744,50 +765,13 @@ const VendorManagement = () => {
                   </td>
                 </tr>
               ))}
+              {serviceRequests.length === 0 && (
+                <tr>
+                  <td colSpan={8} className="p-8 text-center text-slate-400 font-semibold">No service requests found.</td>
+                </tr>
+              )}
             </tbody>
           </table>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
-        <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
-          <h3 className="text-base font-bold text-slate-800 mb-4">Requests by Service Type</h3>
-          <div className="h-56">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie data={[
-                  { name: 'AC Service', value: 4000 },
-                  { name: 'Electrical', value: 3000 },
-                  { name: 'Plumbing', value: 2000 },
-                  { name: 'Washing Machine', value: 2780 },
-                  { name: 'RO Purifier', value: 1890 }
-                ]} cx="50%" cy="50%" innerRadius={60} outerRadius={80} paddingAngle={5} dataKey="value">
-                  {COLORS.map((color, index) => <Cell key={`cell-${index}`} fill={color} />)}
-                </Pie>
-                <Tooltip />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-        <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
-          <h3 className="text-base font-bold text-slate-800 mb-4">Request Status Overview</h3>
-          <div className="h-56">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={[
-                { name: 'New', value: 245 },
-                { name: 'In Progress', value: 5632 },
-                { name: 'Pending', value: 3210 },
-                { name: 'Completed', value: 3458 },
-                { name: 'Cancelled', value: 300 }
-              ]}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                <XAxis dataKey="name" stroke="#64748b" fontSize={11} />
-                <YAxis stroke="#64748b" fontSize={11} />
-                <Tooltip />
-                <Bar dataKey="value" fill="#4f46e5" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
         </div>
       </div>
     </>
@@ -805,10 +789,10 @@ const VendorManagement = () => {
       {/* 4 Stats Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { label: 'Total Feedback', value: '5,842', color: 'bg-blue-50 border-blue-100 text-blue-650' },
-          { label: 'Average Rating', value: '4.6 / 5', color: 'bg-emerald-50 border-emerald-100 text-emerald-600' },
-          { label: 'Positive Feedback', value: '4,852', color: 'bg-indigo-50 border-indigo-100 text-indigo-600' },
-          { label: 'Negative Feedback', value: '990', color: 'bg-rose-50 border-rose-100 text-rose-600' }
+          { label: 'Total Feedback', value: feedbacks.length.toLocaleString(), color: 'bg-blue-50 border-blue-100 text-blue-650' },
+          { label: 'Average Rating', value: feedbacks.length > 0 ? (feedbacks.reduce((sum, f) => sum + (f.rating || 5), 0) / feedbacks.length).toFixed(1) + ' / 5' : '0.0 / 5', color: 'bg-emerald-50 border-emerald-100 text-emerald-600' },
+          { label: 'Positive Feedback', value: feedbacks.filter(f => f.rating >= 4).length.toLocaleString(), color: 'bg-indigo-50 border-indigo-100 text-indigo-600' },
+          { label: 'Negative Feedback', value: feedbacks.filter(f => f.rating < 4).length.toLocaleString(), color: 'bg-rose-50 border-rose-100 text-rose-600' }
         ].map((card, idx) => (
           <div key={idx} className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm flex items-center justify-between">
             <div>
@@ -856,7 +840,7 @@ const VendorManagement = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {mockFeedbacks.map((f) => (
+              {feedbacks.map((f) => (
                 <tr key={f.id} className="hover:bg-slate-50/50 text-slate-600 font-bold transition">
                   <td className="p-4 font-mono text-slate-450">{f.id}</td>
                   <td className="p-4 text-slate-800 font-extrabold">{f.vendor}</td>
@@ -876,6 +860,11 @@ const VendorManagement = () => {
                   </td>
                 </tr>
               ))}
+              {feedbacks.length === 0 && (
+                <tr>
+                  <td colSpan={7} className="p-8 text-center text-slate-400 font-semibold">No feedback found.</td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
@@ -885,8 +874,7 @@ const VendorManagement = () => {
 
   return (
     <div className="space-y-6 text-slate-800">
-      {activeTab === 'overview' && renderOverview()}
-      {activeTab === 'list' && renderList()}
+      {(activeTab === 'overview' || activeTab === 'list' || !activeTab) && renderOverview()}
       {activeTab === 'queries' && renderQueries()}
       {activeTab === 'complaints' && renderComplaints()}
       {activeTab === 'services' && renderServices()}

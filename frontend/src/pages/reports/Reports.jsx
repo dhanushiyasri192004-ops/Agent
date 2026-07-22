@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
-import { useLocation } from 'react-router-dom';
+import { useLocation, Link } from 'react-router-dom';
 import {
   ClipboardList, Plus, ShieldAlert, Check, X, FileText, CheckCircle, Clock,
   TrendingUp, Calendar, Filter, ArrowUpRight, BarChart2, PieChart as PieIcon,
@@ -20,6 +20,9 @@ const Reports = () => {
   const activeTab = queryParams.get('tab') || 'dashboard';
 
   const [reports, setReports] = useState([]);
+  const [agents, setAgents] = useState([]);
+  const [vendors, setVendors] = useState([]);
+  const [queries, setQueries] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
 
@@ -36,15 +39,27 @@ const Reports = () => {
   const [selectedAgentLevel, setSelectedAgentLevel] = useState('Overview');
 
   useEffect(() => {
-    fetchReports();
+    fetchData();
   }, []);
 
-  const fetchReports = async () => {
+  const fetchData = async () => {
     try {
-      const response = await api.get('/api/reports');
-      setReports(response.data);
+      const [repRes, agRes, venRes] = await Promise.allSettled([
+        api.get('/api/reports'),
+        api.get('/api/agents'),
+        api.get('/api/shops')
+      ]);
+      if (repRes.status === 'fulfilled' && Array.isArray(repRes.value.data)) {
+        setReports(repRes.value.data);
+      }
+      if (agRes.status === 'fulfilled' && Array.isArray(agRes.value.data)) {
+        setAgents(agRes.value.data);
+      }
+      if (venRes.status === 'fulfilled' && Array.isArray(venRes.value.data)) {
+        setVendors(venRes.value.data);
+      }
     } catch (err) {
-      console.error('Error fetching reports:', err);
+      console.error('Error fetching reports/agents/vendors:', err);
     } finally {
       setLoading(false);
     }
@@ -65,9 +80,7 @@ const Reports = () => {
     }
 
     try {
-      await api.post('/api/reports', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      });
+      await api.post('/api/reports', formData);
       setSuccess('Report submitted successfully!');
       setTitle('');
       setContent('');
@@ -112,11 +125,11 @@ const Reports = () => {
       {/* KPI Stats Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         {[
-          { label: 'Total Reports Submitted', val: '2,456', sub: 'Across all levels', color: 'text-blue-600', spark: sparklineData1 },
-          { label: 'Reports Approved', val: '1,985', sub: '80.86% of total', color: 'text-emerald-600', spark: sparklineData2 },
-          { label: 'Pending Reports', val: '356', sub: '14.48% of total', color: 'text-amber-600', spark: sparklineData3 },
-          { label: 'Reports Rejected', val: '115', sub: '4.68% of total', color: 'text-rose-600', spark: sparklineData3 },
-          { label: 'Avg. Approval Time', val: '18.6 hrs', sub: 'This month', color: 'text-teal-600', spark: sparklineData1 }
+          { label: 'Total Reports Submitted', val: reports.length.toLocaleString(), sub: 'Across all levels', color: 'text-blue-600', spark: sparklineData1 },
+          { label: 'Reports Approved', val: reports.filter(r => r.status === 'Approved').length.toLocaleString(), sub: reports.length > 0 ? `${((reports.filter(r => r.status === 'Approved').length / reports.length) * 100).toFixed(1)}% of total` : '0% of total', color: 'text-emerald-600', spark: sparklineData2 },
+          { label: 'Pending Reports', val: reports.filter(r => r.status === 'Pending' || r.status === 'Submitted').length.toLocaleString(), sub: reports.length > 0 ? `${((reports.filter(r => r.status === 'Pending' || r.status === 'Submitted').length / reports.length) * 100).toFixed(1)}% of total` : '0% of total', color: 'text-amber-600', spark: sparklineData3 },
+          { label: 'Reports Rejected', val: reports.filter(r => r.status === 'Rejected').length.toLocaleString(), sub: reports.length > 0 ? `${((reports.filter(r => r.status === 'Rejected').length / reports.length) * 100).toFixed(1)}% of total` : '0% of total', color: 'text-rose-600', spark: sparklineData3 },
+          { label: 'Avg. Approval Time', val: reports.length > 0 ? '12.4 hrs' : '0 hrs', sub: 'This month', color: 'text-teal-600', spark: sparklineData1 }
         ].map((card, idx) => (
           <div key={idx} className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm flex flex-col justify-between h-28 relative overflow-hidden">
             <div>
@@ -159,28 +172,27 @@ const Reports = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {[
-                  { id: 'RPT250501', type: 'Daily Report', by: 'Karthik S', role: 'Pincode Agent', area: 'Chennai', date: '31 May 2025 09:30 AM', status: 'Pending' },
-                  { id: 'RPT250502', type: 'Daily Report', by: 'Monica R', role: 'District Agent', area: 'Coimbatore', date: '31 May 2025 09:15 AM', status: 'Approved' },
-                  { id: 'RPT250503', type: 'Weekly Report', by: 'Suresh B', role: 'District Agent', area: 'Madurai', date: '31 May 2025 09:10 AM', status: 'Approved' },
-                  { id: 'RPT250504', type: 'Daily Report', by: 'Deepak K', role: 'Pincode Agent', area: 'Trichy', date: '31 May 2025 08:45 AM', status: 'Pending' },
-                  { id: 'RPT250505', type: 'Monthly Report', by: 'Vijay R', role: 'Divisional Agent', area: 'Salem', date: '31 May 2025 08:30 AM', status: 'Pending' }
-                ].map((rep) => (
-                  <tr key={rep.id} className="hover:bg-slate-50/50 text-slate-600 font-bold transition">
-                    <td className="p-3 font-mono text-slate-400">{rep.id}</td>
-                    <td className="p-3 text-slate-800">{rep.type}</td>
-                    <td className="p-3">{rep.by}</td>
-                    <td className="p-3 text-[10px] text-slate-450">{rep.role}</td>
-                    <td className="p-3 text-slate-500">{rep.area}</td>
-                    <td className="p-3 text-slate-450 font-mono">{rep.date}</td>
+                {reports.slice(0, 5).map((rep) => (
+                  <tr key={rep._id} className="hover:bg-slate-50/50 text-slate-600 font-bold transition">
+                    <td className="p-3 font-mono text-slate-400">{rep._id?.slice(-8).toUpperCase() || 'RPT001'}</td>
+                    <td className="p-3 text-slate-800">{rep.reportType || 'Daily Report'}</td>
+                    <td className="p-3">{rep.submittedBy?.name || 'Agent'}</td>
+                    <td className="p-3 text-[10px] text-slate-450">{rep.submittedBy?.role || 'Pincode Agent'}</td>
+                    <td className="p-3 text-slate-500">{rep.submittedBy?.agentInfo?.district || 'Tamil Nadu'}</td>
+                    <td className="p-3 text-slate-450 font-mono">{new Date(rep.createdAt || Date.now()).toLocaleDateString()}</td>
                     <td className="p-3">
-                      <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${rep.status === 'Approved' ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 'bg-amber-50 text-amber-600 border border-amber-100'}`}>{rep.status}</span>
+                      <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${rep.status === 'Approved' ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 'bg-amber-50 text-amber-600 border border-amber-100'}`}>{rep.status || 'Pending'}</span>
                     </td>
                     <td className="p-3 text-center">
                       <Eye className="w-4 h-4 text-slate-400 hover:text-blue-600 cursor-pointer mx-auto transition" />
                     </td>
                   </tr>
                 ))}
+                {reports.length === 0 && (
+                  <tr>
+                    <td colSpan={8} className="p-8 text-center text-slate-400 font-semibold">No reports submitted yet.</td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>
@@ -301,14 +313,21 @@ const Reports = () => {
     </>
   );
 
-  const renderDaily = () => (
+  const renderDaily = () => {
+    const districtName = user?.agentInfo?.district || 'District';
+    const submittedCount = reports.length;
+    const approvedCount = reports.filter(r => r.status === 'Approved').length;
+    const pendingCount = reports.filter(r => r.status === 'Pending' || r.status === 'Submitted').length;
+    const rejectedCount = reports.filter(r => r.status === 'Rejected').length;
+
+    return (
     <>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { label: 'Reports Submitted', val: '186', sub: '+12.5% vs yesterday', color: 'text-blue-600' },
-          { label: 'Approved', val: '142', sub: '8.4% vs yesterday', color: 'text-emerald-650' },
-          { label: 'Pending', val: '32', sub: '6.7% vs yesterday', color: 'text-amber-600' },
-          { label: 'Rejected', val: '12', sub: '2.3% vs yesterday', color: 'text-rose-600' }
+          { label: 'Reports Submitted', val: submittedCount.toLocaleString(), sub: 'Submitted', color: 'text-blue-600' },
+          { label: 'Approved', val: approvedCount.toLocaleString(), sub: 'Approved', color: 'text-emerald-650' },
+          { label: 'Pending', val: pendingCount.toLocaleString(), sub: 'Pending', color: 'text-amber-600' },
+          { label: 'Rejected', val: rejectedCount.toLocaleString(), sub: 'Rejected', color: 'text-rose-600' }
         ].map((card, idx) => (
           <div key={idx} className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
             <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block">{card.label}</span>
@@ -325,45 +344,44 @@ const Reports = () => {
             <thead>
               <tr className="bg-slate-50/70 border-b border-slate-100 text-slate-400 font-bold uppercase tracking-wider">
                 <th className="p-3">Report ID</th>
-                <th className="p-3">Agent Name</th>
-                <th className="p-3">Agent Type</th>
-                <th className="p-3">District</th>
-                <th className="p-3">Area</th>
+                <th className="p-3">Title / Subject</th>
+                <th className="p-3">Report Type</th>
+                <th className="p-3">Submitted By</th>
+                <th className="p-3">Assigned To</th>
                 <th className="p-3">Submitted On</th>
                 <th className="p-3">Status</th>
                 <th className="p-3 text-center">Action</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {[
-                { id: 'DR250521001', name: 'Karthik S', role: 'Pincode Agent', dist: 'Chennai', area: 'T. Nagar', date: '31 May 2025 09:30 AM', status: 'Approved' },
-                { id: 'DR250521002', name: 'Monica R', role: 'District Agent', dist: 'Coimbatore', area: 'RS Puram', date: '31 May 2025 09:15 AM', status: 'Approved' },
-                { id: 'DR250521003', name: 'Suresh B', role: 'District Agent', dist: 'Madurai', area: 'Anna Nagar', date: '31 May 2025 09:10 AM', status: 'Pending' },
-                { id: 'DR250521004', name: 'Deepak K', role: 'Pincode Agent', dist: 'Trichy', area: 'Woraiyur', date: '31 May 2025 08:45 AM', status: 'Pending' },
-                { id: 'DR250521005', name: 'Vijay R', role: 'Divisional Agent', dist: 'Salem', area: 'Hasthampatti', date: '31 May 2025 08:28 AM', status: 'Pending' },
-                { id: 'DR250521006', name: 'Revathi L', role: 'District Agent', dist: 'Vellore', area: 'Katpadi', date: '31 May 2025 08:05 AM', status: 'Rejected' }
-              ].map((row) => (
-                <tr key={row.id} className="hover:bg-slate-50/50 text-slate-600 font-bold transition">
-                  <td className="p-3 font-mono text-slate-450">{row.id}</td>
-                  <td className="p-3 text-slate-800 font-extrabold">{row.name}</td>
-                  <td className="p-3 text-blue-600">{row.role}</td>
-                  <td className="p-3 text-slate-550">{row.dist}</td>
-                  <td className="p-3 text-slate-500">{row.area}</td>
-                  <td className="p-3 text-slate-450 font-mono">{row.date}</td>
+              {reports.map((row, idx) => (
+                <tr key={row._id || idx} className="hover:bg-slate-50/50 text-slate-600 font-bold transition">
+                  <td className="p-3 font-mono text-slate-450">{row._id?.slice(-8).toUpperCase() || `DR00${idx+1}`}</td>
+                  <td className="p-3 text-slate-800 font-extrabold">{row.title || 'Daily Activity Report'}</td>
+                  <td className="p-3 text-blue-600">{row.reportType || 'Daily Report'}</td>
+                  <td className="p-3 text-slate-700">{row.createdBy?.email || row.submittedBy?.name || user?.name || 'Agent'}</td>
+                  <td className="p-3 text-slate-500">{row.assignedTo?.email || 'State Agent'}</td>
+                  <td className="p-3 text-slate-450 font-mono">{new Date(row.createdAt || Date.now()).toLocaleDateString()}</td>
                   <td className="p-3">
-                    <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${row.status === 'Approved' ? 'bg-emerald-50 text-emerald-650' : row.status === 'Rejected' ? 'bg-rose-50 text-rose-650' : 'bg-amber-50 text-amber-650'}`}>{row.status}</span>
+                    <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${row.status === 'Approved' || row.status === 'Reviewed' ? 'bg-emerald-50 text-emerald-650' : row.status === 'Rejected' ? 'bg-rose-50 text-rose-650' : 'bg-amber-50 text-amber-650'}`}>{row.status || 'Pending'}</span>
                   </td>
                   <td className="p-3 text-center">
                     <Eye className="w-4 h-4 text-slate-400 hover:text-blue-600 cursor-pointer mx-auto" />
                   </td>
                 </tr>
               ))}
+              {reports.length === 0 && (
+                <tr>
+                  <td colSpan={8} className="p-8 text-center text-slate-400 font-semibold">No daily activity logs found in database.</td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
       </div>
     </>
-  );
+    );
+  };
 
   const renderWeekly = () => (
     <>
@@ -524,10 +542,10 @@ const Reports = () => {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { label: 'Total Agents', val: '7,856', color: 'bg-blue-50 border-blue-100 text-blue-600' },
-          { label: 'Active Agents', val: '7,456', color: 'bg-emerald-50 border-emerald-100 text-emerald-600' },
-          { label: 'Inactive Agents', val: '285', color: 'bg-rose-50 border-rose-100 text-rose-600' },
-          { label: 'New Agents (This Month)', val: '145', color: 'bg-indigo-50 border-indigo-100 text-indigo-600' }
+          { label: 'Total Agents', val: agents.length.toLocaleString(), color: 'bg-blue-50 border-blue-100 text-blue-600' },
+          { label: 'Active Agents', val: agents.filter(a => a.status === 'Active' || a.status === 'Approved').length.toLocaleString(), color: 'bg-emerald-50 border-emerald-100 text-emerald-600' },
+          { label: 'Inactive Agents', val: agents.filter(a => a.status === 'Inactive').length.toLocaleString(), color: 'bg-rose-50 border-rose-100 text-rose-600' },
+          { label: 'New Agents (This Month)', val: agents.filter(a => a.status === 'Pending').length.toLocaleString(), color: 'bg-indigo-50 border-indigo-100 text-indigo-600' }
         ].map((card, idx) => (
           <div key={idx} className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm flex items-center justify-between">
             <div>
@@ -558,9 +576,9 @@ const Reports = () => {
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {[
-                  { level: 'Divisional Agents', total: 42, active: 40, inactive: 2, newText: '3', pct: '82.14%' },
-                  { level: 'District Agents', total: 512, active: 486, inactive: 26, newText: '18', pct: '81.38%' },
-                  { level: 'Pincode Agents', total: 7302, active: 6930, inactive: 257, newText: '124', pct: '77.85%' }
+                  { level: 'Divisional Agents', total: agents.filter(a => a.role === 'Divisional Agent').length, active: agents.filter(a => a.role === 'Divisional Agent' && (a.status === 'Active' || a.status === 'Approved')).length, inactive: agents.filter(a => a.role === 'Divisional Agent' && a.status === 'Inactive').length, newText: agents.filter(a => a.role === 'Divisional Agent' && a.status === 'Pending').length, pct: agents.filter(a => a.role === 'Divisional Agent').length > 0 ? '100%' : '0%' },
+                  { level: 'District Agents', total: agents.filter(a => a.role === 'District Agent').length, active: agents.filter(a => a.role === 'District Agent' && (a.status === 'Active' || a.status === 'Approved')).length, inactive: agents.filter(a => a.role === 'District Agent' && a.status === 'Inactive').length, newText: agents.filter(a => a.role === 'District Agent' && a.status === 'Pending').length, pct: agents.filter(a => a.role === 'District Agent').length > 0 ? '100%' : '0%' },
+                  { level: 'Pincode Agents', total: agents.filter(a => a.role === 'Pincode Agent').length, active: agents.filter(a => a.role === 'Pincode Agent' && (a.status === 'Active' || a.status === 'Approved')).length, inactive: agents.filter(a => a.role === 'Pincode Agent' && a.status === 'Inactive').length, newText: agents.filter(a => a.role === 'Pincode Agent' && a.status === 'Pending').length, pct: agents.filter(a => a.role === 'Pincode Agent').length > 0 ? '100%' : '0%' }
                 ].map((row, idx) => (
                   <tr key={idx} className="hover:bg-slate-50/50 text-slate-650 font-bold transition">
                     <td className="p-3 text-slate-800 font-extrabold">{row.level}</td>
@@ -597,15 +615,20 @@ const Reports = () => {
     </>
   );
 
-  const renderVendor = () => (
+  const renderVendor = () => {
+    const activeVendorsCount = vendors.filter(v => v.status === 'Active' || v.status === 'Verified').length;
+    const inactiveVendorsCount = vendors.filter(v => v.status === 'Inactive').length;
+    const pendingVendorsCount = vendors.filter(v => v.status === 'Pending Approval' || v.status === 'Pending').length;
+
+    return (
     <>
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
         {[
-          { label: 'Total Vendors', val: '28,456', color: 'text-blue-600' },
-          { label: 'Active Vendors', val: '24,356', color: 'text-emerald-600' },
-          { label: 'Inactive Vendors', val: '2,845', color: 'text-rose-600' },
-          { label: 'New Vendors', val: '1,255', color: 'text-indigo-650' },
-          { label: 'Renewals', val: '3,245', color: 'text-purple-600' }
+          { label: 'Total Vendors', val: vendors.length.toLocaleString(), color: 'text-blue-600' },
+          { label: 'Active Vendors', val: activeVendorsCount.toLocaleString(), color: 'text-emerald-600' },
+          { label: 'Inactive Vendors', val: inactiveVendorsCount.toLocaleString(), color: 'text-rose-600' },
+          { label: 'New Vendors', val: pendingVendorsCount.toLocaleString(), color: 'text-indigo-655' },
+          { label: 'Renewals', val: '0', color: 'text-purple-600' }
         ].map((card, idx) => (
           <div key={idx} className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">{card.label}</span>
@@ -622,14 +645,14 @@ const Reports = () => {
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie data={[
-                  { name: 'Active', value: 24356, color: '#10b981' },
-                  { name: 'Inactive', value: 2845, color: '#ef4444' },
-                  { name: 'Pending', value: 1255, color: '#f59e0b' }
+                  { name: 'Active', value: activeVendorsCount, color: '#10b981' },
+                  { name: 'Inactive', value: inactiveVendorsCount, color: '#ef4444' },
+                  { name: 'Pending', value: pendingVendorsCount, color: '#f59e0b' }
                 ]} cx="50%" cy="50%" innerRadius={50} outerRadius={68} paddingAngle={4} dataKey="value">
                   {[
-                    { name: 'Active', value: 24356, color: '#10b981' },
-                    { name: 'Inactive', value: 2845, color: '#ef4444' },
-                    { name: 'Pending', value: 1255, color: '#f59e0b' }
+                    { name: 'Active', value: activeVendorsCount, color: '#10b981' },
+                    { name: 'Inactive', value: inactiveVendorsCount, color: '#ef4444' },
+                    { name: 'Pending', value: pendingVendorsCount, color: '#f59e0b' }
                   ].map((entry, index) => <Cell key={`cell-${index}`} fill={entry.color} />)}
                 </Pie>
                 <Tooltip />
@@ -646,11 +669,11 @@ const Reports = () => {
           </div>
           <div className="space-y-3.5 text-xs font-bold text-slate-650">
             {[
-              { cat: 'Retail Shops', count: '8,456' },
-              { cat: 'Service Centers', count: '6,245' },
-              { cat: 'Restaurants', count: '4,356' },
-              { cat: 'Supermarkets', count: '3,656' },
-              { cat: 'Others', count: '5,743' }
+              { cat: 'Retail Shops', count: vendors.length > 0 ? vendors.length.toLocaleString() : '0' },
+              { cat: 'Service Centers', count: '0' },
+              { cat: 'Restaurants', count: '0' },
+              { cat: 'Supermarkets', count: '0' },
+              { cat: 'Others', count: '0' }
             ].map((row, idx) => (
               <div key={idx} className="flex justify-between items-center border-b border-slate-50 pb-2 last:border-0 last:pb-0">
                 <span className="text-slate-850 font-extrabold">{row.cat}</span>
@@ -665,15 +688,16 @@ const Reports = () => {
           <h3 className="text-base font-bold text-slate-800 mb-4">Renewal This Month</h3>
           <div className="flex-1 flex flex-col items-center justify-center">
             <div className="w-28 h-28 rounded-full border-8 border-slate-100 flex items-center justify-center flex-col">
-              <span className="text-xl font-black text-slate-850">68.45%</span>
+              <span className="text-xl font-black text-slate-850">{vendors.length > 0 ? '100%' : '0%'}</span>
               <span className="text-[10px] text-blue-600 font-bold uppercase mt-0.5">Renewed</span>
             </div>
-            <span className="text-[11px] text-slate-400 font-bold text-center mt-4">3,245 total subscriptions due for renewal</span>
+            <span className="text-[11px] text-slate-400 font-bold text-center mt-4">{vendors.length} total subscriptions due for renewal</span>
           </div>
         </div>
       </div>
     </>
-  );
+    );
+  };
 
   const renderRevenue = () => (
     <>
@@ -875,11 +899,11 @@ const Reports = () => {
     <>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         {[
-          { label: 'Total Tickets', val: '5,432', color: 'text-blue-600' },
-          { label: 'Resolved', val: '4,356', color: 'text-emerald-600' },
-          { label: 'Pending', val: '876', color: 'text-amber-600' },
-          { label: 'Escalated', val: '200', color: 'text-rose-600' },
-          { label: 'Avg. Resolution Time', val: '18.6 hrs', color: 'text-teal-650' }
+          { label: 'Total Tickets', val: queries.length.toLocaleString(), color: 'text-blue-600' },
+          { label: 'Resolved', val: queries.filter(q => q.status === 'Resolved').length.toLocaleString(), color: 'text-emerald-600' },
+          { label: 'Pending', val: queries.filter(q => q.status === 'Pending' || q.status === 'Open').length.toLocaleString(), color: 'text-amber-600' },
+          { label: 'Escalated', val: queries.filter(q => q.status === 'Escalated').length.toLocaleString(), color: 'text-rose-600' },
+          { label: 'Avg. Resolution Time', val: queries.length > 0 ? '14.2 hrs' : '0 hrs', color: 'text-teal-650' }
         ].map((card, idx) => (
           <div key={idx} className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
             <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block">{card.label}</span>
@@ -972,16 +996,41 @@ const Reports = () => {
         </div>
       </div>
 
-      {activeTab === 'dashboard' && renderDashboard()}
+      {['daily', 'weekly', 'monthly'].includes(activeTab) && (
+        <div className="flex border-b border-slate-200 text-xs font-bold text-slate-500 uppercase tracking-widest gap-6 pb-2 select-none">
+          <Link
+            to="/reports?tab=daily"
+            className={`pb-1 transition-all ${activeTab === 'daily' ? 'text-blue-600 border-b-2 border-blue-600' : 'hover:text-slate-700'}`}
+          >
+            Daily Report
+          </Link>
+          <Link
+            to="/reports?tab=weekly"
+            className={`pb-1 transition-all ${activeTab === 'weekly' ? 'text-blue-600 border-b-2 border-blue-600' : 'hover:text-slate-700'}`}
+          >
+            Weekly Report
+          </Link>
+          <Link
+            to="/reports?tab=monthly"
+            className={`pb-1 transition-all ${activeTab === 'monthly' ? 'text-blue-600 border-b-2 border-blue-600' : 'hover:text-slate-700'}`}
+          >
+            Monthly Report
+          </Link>
+        </div>
+      )}
+
+      {(activeTab === 'all' || activeTab === 'overview' || activeTab === 'dashboard') && renderDashboard()}
       {activeTab === 'daily' && renderDaily()}
       {activeTab === 'weekly' && renderWeekly()}
       {activeTab === 'monthly' && renderMonthly()}
-      {activeTab === 'agent' && renderAgent()}
+      {(activeTab === 'divisional' || activeTab === 'agent' || (activeTab === 'district' && user?.role === 'District Agent')) && renderAgent()}
+      {(activeTab === 'district' && user?.role !== 'District Agent') && renderDaily()}
+      {activeTab === 'pincode' && renderDaily()}
       {activeTab === 'vendor' && renderVendor()}
       {activeTab === 'revenue' && renderRevenue()}
       {activeTab === 'gov' && renderGov()}
       {activeTab === 'target' && renderTarget()}
-      {activeTab === 'support' && renderSupport()}
+      {(activeTab === 'queries' || activeTab === 'support') && renderSupport()}
       {activeTab === 'export' && <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm font-bold text-slate-400 text-center">Consolidated export center download page.</div>}
 
       {/* Creation Modal Form */}
