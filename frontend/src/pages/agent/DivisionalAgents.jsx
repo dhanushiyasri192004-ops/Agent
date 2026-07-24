@@ -104,8 +104,12 @@ const DivisionalAgents = () => {
 
   const fetchAgents = async () => {
     try {
-      const response = await api.get('/api/agents');
-      const rawData = response.data || [];
+      const [agentsRes, shopsRes] = await Promise.all([
+        api.get('/api/agents'),
+        api.get('/api/shops')
+      ]);
+      const rawData = agentsRes.data || [];
+      const rawShops = shopsRes.data || [];
       setAllAgents(rawData);
       const assignedDistrict = user?.agentInfo?.district || user?.district || '';
       const districtRegex = assignedDistrict ? new RegExp(assignedDistrict.replace(/District/i, '').trim(), 'i') : null;
@@ -118,22 +122,28 @@ const DivisionalAgents = () => {
 
       setDbAgents(filtered);
 
-      const formattedDb = filtered.map((agent, index) => ({
-        _id: agent._id || `DB_${index}`,
-        name: agent.name,
-        role: agent.role || 'Divisional Agent',
-        division: agent.division || 'Unassigned',
-        district: agent.district || assignedDistrict || 'Salem District',
-        pincode: agent.pincode || '',
-        state: agent.state || 'Tamil Nadu',
-        districts: 1,
-        customers: '0',
-        revenue: '₹ 0.00',
-        performance: 100,
-        status: agent.status || 'Active',
-        phone: agent.phone || 'N/A',
-        user: { email: agent.user?.email || '' }
-      }));
+      const formattedDb = filtered.map((agent, index) => {
+        const divClean = String(agent.division || '').trim().toLowerCase();
+        const divShops = rawShops.filter(
+          (s) => String(s.division || '').trim().toLowerCase() === divClean
+        );
+        return {
+          _id: agent._id || `DB_${index}`,
+          name: agent.name,
+          role: agent.role || 'Divisional Agent',
+          division: agent.division || 'Unassigned',
+          district: agent.district || assignedDistrict || 'Salem District',
+          pincode: agent.pincode || '',
+          state: agent.state || 'Tamil Nadu',
+          districts: 1,
+          customers: divShops.length.toString(),
+          revenue: '₹ 0.00',
+          performance: 100,
+          status: agent.status || 'Active',
+          phone: agent.phone || 'N/A',
+          user: { email: agent.user?.email || '' }
+        };
+      });
 
       setAgents(formattedDb);
     } catch (err) {

@@ -81,20 +81,26 @@ const PincodeAgents = () => {
 
       setDbAgents(filtered);
 
-      const formattedDb = filtered.map((agent, index) => ({
-        _id: agent._id || `DB_PAG_${index}`,
-        name: agent.name,
-        role: agent.role || 'Pincode Agent',
-        division: agent.division || 'Unassigned',
-        district: agent.district || assignedDistrict || 'Salem District',
-        pincode: agent.pincode || 'Unassigned',
-        state: agent.state || 'Tamil Nadu',
-        customers: '0',
-        performance: 100,
-        status: agent.status || 'Active',
-        phone: agent.phone || 'N/A',
-        user: { email: agent.user?.email || '' }
-      }));
+      const formattedDb = filtered.map((agent, index) => {
+        const pinClean = String(agent.pincode || '').trim();
+        const pinShops = rawShops.filter(
+          (s) => String(s.pincode || '').trim() === pinClean
+        );
+        return {
+          _id: agent._id || `DB_PAG_${index}`,
+          name: agent.name,
+          role: agent.role || 'Pincode Agent',
+          division: agent.division || 'Unassigned',
+          district: agent.district || assignedDistrict || 'Salem District',
+          pincode: agent.pincode || 'Unassigned',
+          state: agent.state || 'Tamil Nadu',
+          customers: pinShops.length.toString(),
+          performance: 100,
+          status: agent.status || 'Active',
+          phone: agent.phone || 'N/A',
+          user: { email: agent.user?.email || '' }
+        };
+      });
 
       setAgents(formattedDb);
     } catch (err) {
