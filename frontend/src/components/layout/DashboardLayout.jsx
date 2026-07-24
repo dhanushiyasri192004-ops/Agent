@@ -297,6 +297,19 @@ const DashboardLayout = ({ children }) => {
               </Link>
 
               <Link
+                to="/commission"
+                onClick={() => setSidebarOpen(false)}
+                className={`flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-bold transition-all ${
+                  location.pathname === '/commission'
+                    ? 'bg-[#f5c518] text-slate-950 shadow-md font-extrabold'
+                    : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+                }`}
+              >
+                <Briefcase className="w-4.5 h-4.5" />
+                <span>Commission</span>
+              </Link>
+
+              <Link
                 to="/pincode-dashboard?tab=notifications"
                 onClick={() => setSidebarOpen(false)}
                 className={`flex items-center justify-between px-4 py-2.5 rounded-lg text-sm font-bold transition-all ${
@@ -309,7 +322,9 @@ const DashboardLayout = ({ children }) => {
                   <Bell className="w-4.5 h-4.5" />
                   <span>Notifications</span>
                 </div>
-                <span className="bg-red-500 text-white text-[11px] px-2 py-0.5 rounded-full font-bold">12</span>
+                {unreadCount > 0 && (
+                  <span className="bg-red-500 text-white text-[11px] px-2 py-0.5 rounded-full font-bold">{unreadCount}</span>
+                )}
               </Link>
 
               <Link
@@ -360,56 +375,21 @@ const DashboardLayout = ({ children }) => {
               <div className="space-y-1">
                 <p className="px-4 text-[11px] font-black text-slate-500 uppercase tracking-widest">Management</p>
                 
-                {/* Agent Management Collapsible Group */}
+                {/* Agent Management Link */}
                 {user?.role !== 'Pincode Agent' && (
                   <div className="space-y-1">
-                    <button
-                      onClick={() => setManagementOpen(!managementOpen)}
-                      className="w-full flex items-center justify-between px-4 py-2.5 text-sm font-bold text-slate-400 hover:text-white hover:bg-slate-800/40 rounded-lg transition"
+                    <Link
+                      to="/agent-management"
+                      onClick={() => setSidebarOpen(false)}
+                      className={`flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-bold transition-all ${
+                        location.pathname === '/agent-management'
+                          ? 'bg-[#f5c518] text-slate-950 shadow-md font-extrabold'
+                          : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+                      }`}
                     >
-                      <div className="flex items-center gap-3">
-                        <Users className="w-4.5 h-4.5" />
-                        <span>Agent Management</span>
-                      </div>
-                      {managementOpen ? <ChevronDown className="w-4.5 h-4.5" /> : <ChevronRight className="w-4.5 h-4.5" />}
-                    </button>
-                    {managementOpen && (
-                      <div className="pl-6 space-y-1.5 mt-1 border-l border-slate-800 ml-6">
-                        {(user?.role === 'State Agent' || user?.role === 'Admin') && (
-                          <Link
-                            to="/district-agents"
-                            onClick={() => setSidebarOpen(false)}
-                            className={`block px-3 py-2 rounded-md text-xs font-bold transition ${
-                              location.pathname === '/district-agents' ? 'text-slate-950 bg-[#f5c518] shadow-md font-extrabold' : 'text-slate-400 hover:text-white hover:bg-slate-800/30'
-                            }`}
-                          >
-                            District Agents
-                          </Link>
-                        )}
-                        {(user?.role === 'State Agent' || user?.role === 'District Agent' || user?.role === 'Admin') && (
-                          <Link
-                            to="/divisional-agents"
-                            onClick={() => setSidebarOpen(false)}
-                            className={`block px-3 py-2 rounded-md text-xs font-bold transition ${
-                              location.pathname === '/divisional-agents' ? 'text-slate-950 bg-[#f5c518] shadow-md font-extrabold' : 'text-slate-400 hover:text-white hover:bg-slate-800/30'
-                            }`}
-                          >
-                            Divisional Agents
-                          </Link>
-                        )}
-                        {(user?.role === 'State Agent' || user?.role === 'District Agent' || user?.role === 'Divisional Agent' || user?.role === 'Admin') && (
-                          <Link
-                            to="/pincode-agents"
-                            onClick={() => setSidebarOpen(false)}
-                            className={`block px-3 py-2 rounded-md text-xs font-bold transition ${
-                              location.pathname === '/pincode-agents' ? 'text-slate-950 bg-[#f5c518] shadow-md font-extrabold' : 'text-slate-400 hover:text-white hover:bg-slate-800/30'
-                            }`}
-                          >
-                            Pincode Agents
-                          </Link>
-                        )}
-                      </div>
-                    )}
+                      <Users className="w-4.5 h-4.5" />
+                      <span>Agent Management</span>
+                    </Link>
                   </div>
                 )}
 
@@ -495,48 +475,17 @@ const DashboardLayout = ({ children }) => {
                   </button>
                   {reportsOpen && (
                     <div className="pl-6 space-y-1.5 mt-1 border-l border-slate-800 ml-6">
-                      {(user?.role === 'State Agent' || user?.role === 'Admin') && (
-                        <Link
-                          to="/reports?tab=all"
-                          onClick={() => setSidebarOpen(false)}
-                          className={`block px-3 py-2 rounded-md text-xs font-bold transition ${
-                            (location.pathname === '/reports' && (!location.search || location.search === '' || location.search === '?tab=all' || location.search === '?tab=overview' || location.search === '?tab=dashboard')) ? 'text-slate-950 bg-[#f5c518] shadow-md font-extrabold' : 'text-slate-400 hover:text-white hover:bg-slate-800/30'
-                          }`}
-                        >
-                          All Reports
-                        </Link>
-                      )}
-                      {(user?.role === 'State Agent' || user?.role === 'District Agent' || user?.role === 'Divisional Agent' || user?.role === 'Admin') && (
+                      {(user?.role === 'State Agent' || user?.role === 'District Agent' || user?.role === 'Admin') && (
                         <Link
                           to="/reports?tab=divisional"
                           onClick={() => setSidebarOpen(false)}
                           className={`block px-3 py-2 rounded-md text-xs font-bold transition ${
-                            (location.pathname === '/reports' && (location.search === '?tab=divisional' || location.search === '?tab=agent' || location.search === '?tab=district')) ? 'text-slate-950 bg-[#f5c518] shadow-md font-extrabold' : 'text-slate-400 hover:text-white hover:bg-slate-800/30'
+                            (location.pathname === '/reports' && (location.search === '?tab=divisional' || location.search === '?tab=agent' || location.search === '?tab=district' || location.search === '' || !location.search || location.search === '?tab=all')) ? 'text-slate-950 bg-[#f5c518] shadow-md font-extrabold' : 'text-slate-400 hover:text-white hover:bg-slate-800/30'
                           }`}
                         >
-                          Divisional Reports
+                          Agents Report
                         </Link>
                       )}
-                      {(user?.role === 'State Agent' || user?.role === 'Admin') && (
-                        <Link
-                          to="/reports?tab=district"
-                          onClick={() => setSidebarOpen(false)}
-                          className={`block px-3 py-2 rounded-md text-xs font-bold transition ${
-                            (location.pathname === '/reports' && location.search === '?tab=district') ? 'text-slate-950 bg-[#f5c518] shadow-md font-extrabold' : 'text-slate-400 hover:text-white hover:bg-slate-800/30'
-                          }`}
-                        >
-                          District Reports
-                        </Link>
-                      )}
-                      <Link
-                        to="/reports?tab=pincode"
-                        onClick={() => setSidebarOpen(false)}
-                        className={`block px-3 py-2 rounded-md text-xs font-bold transition ${
-                          (location.pathname === '/reports' && location.search === '?tab=pincode') ? 'text-slate-950 bg-[#f5c518] shadow-md font-extrabold' : 'text-slate-400 hover:text-white hover:bg-slate-800/30'
-                        }`}
-                      >
-                        Pincode Reports
-                      </Link>
                       <Link
                         to="/reports?tab=vendor"
                         onClick={() => setSidebarOpen(false)}
@@ -582,6 +531,18 @@ const DashboardLayout = ({ children }) => {
                   <TrendingUp className="w-4.5 h-4.5" />
                   <span>Performance</span>
                 </Link>
+
+                {/* Commission */}
+                <Link
+                  to="/commission"
+                  onClick={() => setSidebarOpen(false)}
+                  className={`flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-bold transition ${
+                    location.pathname === '/commission' ? 'bg-[#f5c518] text-slate-950 shadow-md font-extrabold' : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+                  }`}
+                >
+                  <Briefcase className="w-4.5 h-4.5" />
+                  <span>Commission</span>
+                </Link>
               </div>
 
               {/* Section: OTHER */}
@@ -624,7 +585,9 @@ const DashboardLayout = ({ children }) => {
                     <Bell className="w-4.5 h-4.5" />
                     <span>Notifications</span>
                   </div>
-                  <span className="bg-red-500 text-white text-[11px] px-2 py-0.5 rounded-full font-bold">12</span>
+                  {unreadCount > 0 && (
+                    <span className="bg-red-500 text-white text-[11px] px-2 py-0.5 rounded-full font-bold">{unreadCount}</span>
+                  )}
                 </Link>
 
                 {/* Announcements */}
@@ -658,20 +621,6 @@ const DashboardLayout = ({ children }) => {
 
         {/* Sidebar Footer User Card */}
         <div className="p-4 border-t border-slate-800/60 space-y-1">
-          {user?.role === 'Pincode Agent' && (
-            <Link
-              to="/pincode-dashboard?tab=support"
-              onClick={() => setSidebarOpen(false)}
-              className={`flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-bold transition-all ${
-                location.search === '?tab=support'
-                  ? 'bg-[#f5c518] text-slate-950 shadow-md font-extrabold'
-                  : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
-              }`}
-            >
-              <Users className="w-4.5 h-4.5" />
-              <span>Help & Support</span>
-            </Link>
-          )}
           <button
             onClick={() => setShowLogoutModal(true)}
             className="w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-bold text-slate-400 hover:text-red-400 hover:bg-red-950/20 transition"
@@ -923,6 +872,38 @@ const DashboardLayout = ({ children }) => {
 
         {/* MAIN BODY SCENE */}
         <main className="flex-1 p-6 sm:p-8 md:p-10 lg:p-12 overflow-y-auto pb-20">
+          {/* Prominent Alert Banner for New Notifications/Announcements */}
+          {Array.isArray(notifications) && notifications.filter(n => !n.isRead).length > 0 && (
+            <div className="mb-6 bg-gradient-to-r from-amber-500/10 to-orange-500/10 border-l-4 border-amber-500 p-4 rounded-r-xl shadow-sm flex items-start justify-between gap-4 animate-pulse">
+              <div className="flex gap-3">
+                <div className="w-9 h-9 rounded-lg bg-amber-500 text-white flex items-center justify-center shrink-0">
+                  <Megaphone className="w-5 h-5" />
+                </div>
+                <div>
+                  <h4 className="text-sm font-extrabold text-slate-800">Alert / Announcement Notice</h4>
+                  <p className="text-xs text-slate-650 font-bold mt-1">
+                    {notifications.filter(n => !n.isRead)[0].message}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={async () => {
+                  try {
+                    const latestUnread = notifications.filter(n => !n.isRead)[0];
+                    await axios.patch(`/api/notifications/${latestUnread._id}/read`, {}, {
+                      headers: { Authorization: `Bearer ${user?.token}` }
+                    });
+                    fetchNotifications();
+                  } catch (err) {
+                    console.error('Failed to dismiss alert:', err);
+                  }
+                }}
+                className="text-xs font-bold text-amber-700 hover:text-amber-800 bg-amber-500/20 hover:bg-amber-500/30 px-3 py-1.5 rounded-lg transition"
+              >
+                Dismiss Alert
+              </button>
+            </div>
+          )}
           {children}
         </main>
       </div>

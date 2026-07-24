@@ -5,6 +5,10 @@
 @tailwind utilities;
 
 
+html {
+  font-size: 106.25%; /* Scales base rem from 16px to 17px */
+}
+
 body {
   margin: 0;
   font-family: 'Outfit', 'Inter', sans-serif;
@@ -31,4 +35,14 @@ body {
 
 ::-webkit-scrollbar-thumb:hover {
   background: #334155;
+}
+
+/* Prevent Chrome / WebKit Browser Autofill White Background & Text Color Overrides */
+input:-webkit-autofill,
+input:-webkit-autofill:hover, 
+input:-webkit-autofill:focus, 
+input:-webkit-autofill:active {
+  -webkit-text-fill-color: #ffffff !important;
+  -webkit-box-shadow: 0 0 0px 1000px #0b1329 inset !important;
+  transition: background-color 50000s ease-in-out 0s;
 }

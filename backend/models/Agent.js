@@ -25,7 +25,7 @@ const agentSchema = new mongoose.Schema(
     },
     role: {
       type: String,
-      enum: ['State Agent', 'Divisional Agent', 'District Agent', 'Pincode Agent'],
+      enum: ['State Agent', 'District Agent', 'Divisional Agent', 'Pincode Agent'],
       required: true,
     },
     state: {
@@ -53,6 +53,10 @@ const agentSchema = new mongoose.Schema(
     metrics: {
       targetShops: { type: Number, default: 100 },
       completedShops: { type: Number, default: 0 },
+    },
+    walletBalance: {
+      type: Number,
+      default: 0,
     }
   },
   {

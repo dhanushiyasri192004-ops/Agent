@@ -48,17 +48,19 @@ const VendorManagement = () => {
     try {
       const response = await api.get('/api/shops');
       if (Array.isArray(response.data)) {
-        const formattedShops = response.data.map((shop, idx) => ({
-          id: shop._id || `VEN_${idx}`,
-          name: shop.shopName,
-          phone: shop.contactNumber || 'N/A',
-          district: shop.district || 'Unassigned',
-          pincode: shop.pincode || 'Unassigned',
-          category: shop.businessCategory || 'General',
-          agent: shop.createdBy?.name || 'Agent',
-          status: shop.verificationStatus || 'Pending Approval',
-          email: shop.ownerName || shop.shopName
-        }));
+        const formattedShops = response.data
+          .filter(shop => shop !== null && shop !== undefined)
+          .map((shop, idx) => ({
+            id: shop._id || `VEN_${idx}`,
+            name: shop.name || shop.shopName || 'Unnamed Shop',
+            phone: shop.contactNumber || shop.phone || 'N/A',
+            district: shop.district || 'Unassigned',
+            pincode: shop.pincode || 'Unassigned',
+            category: shop.businessCategory || 'General',
+            agent: shop.createdBy?.name || 'Agent',
+            status: shop.verificationStatus || 'Pending Approval',
+            email: shop.ownerName || shop.shopName || 'N/A'
+          }));
         setVendors(formattedShops);
       } else {
         setVendors([]);
@@ -114,9 +116,12 @@ const VendorManagement = () => {
 
   // Filters logic
   const filteredVendors = vendors.filter(c => {
-    const matchesSearch = c.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                          c.phone.includes(searchTerm) ||
-                          c.id.toLowerCase().includes(searchTerm.toLowerCase());
+    const nameStr = c.name || '';
+    const phoneStr = c.phone || '';
+    const idStr = c.id || '';
+    const matchesSearch = nameStr.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                          phoneStr.includes(searchTerm) ||
+                          idStr.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesDistrict = selectedDistrict === 'All Districts' || c.district === selectedDistrict;
     const matchesStatus = selectedStatus === 'All Status' || c.status === selectedStatus;
     return matchesSearch && matchesDistrict && matchesStatus;
@@ -874,7 +879,8 @@ const VendorManagement = () => {
 
   return (
     <div className="space-y-6 text-slate-800">
-      {(activeTab === 'overview' || activeTab === 'list' || !activeTab) && renderOverview()}
+      {(activeTab === 'overview' || !activeTab) && renderOverview()}
+      {activeTab === 'list' && renderList()}
       {activeTab === 'queries' && renderQueries()}
       {activeTab === 'complaints' && renderComplaints()}
       {activeTab === 'services' && renderServices()}

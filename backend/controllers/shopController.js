@@ -2,6 +2,7 @@ import Shop from '../models/Shop.js';
 import Agent from '../models/Agent.js';
 import ActivityLog from '../models/ActivityLog.js';
 import Notification from '../models/Notification.js';
+import Commission from '../models/Commission.js';
 
 export const registerShop = async (req, res, next) => {
   const { name, ownerName, email, phone, address, pincode } = req.body;
@@ -122,6 +123,51 @@ export const verifyShop = async (req, res, next) => {
     shop.verificationStatus = status;
     shop.comments = comments || '';
     await shop.save();
+
+    if (status === 'Verified') {
+      const existingComm = await Commission.findOne({ shopId: shop._id });
+      if (!existingComm) {
+        // Resolve agent hierarchy for the shop using regex matching
+        const pincodeAgent = await Agent.findOne({ pincode: shop.pincode, role: 'Pincode Agent' });
+        const divisionalAgent = await Agent.findOne({ division: new RegExp(shop.division.replace(/Division/i, '').trim(), 'i'), role: 'Divisional Agent' });
+        const districtAgent = await Agent.findOne({ district: new RegExp(shop.district.replace(/District/i, '').trim(), 'i'), role: 'District Agent' });
+        const stateAgent = await Agent.findOne({ state: new RegExp(shop.state.trim(), 'i'), role: 'State Agent' });
+
+        // Update wallets
+        if (pincodeAgent) {
+          pincodeAgent.walletBalance = (pincodeAgent.walletBalance || 0) + 150;
+          await pincodeAgent.save();
+        }
+        if (divisionalAgent) {
+          divisionalAgent.walletBalance = (divisionalAgent.walletBalance || 0) + 50;
+          await divisionalAgent.save();
+        }
+        if (districtAgent) {
+          districtAgent.walletBalance = (districtAgent.walletBalance || 0) + 50;
+          await districtAgent.save();
+        }
+        if (stateAgent) {
+          stateAgent.walletBalance = (stateAgent.walletBalance || 0) + 50;
+          await stateAgent.save();
+        }
+
+        // Create Commission record
+        await Commission.create({
+          shopId: shop._id,
+          registrationFee: 500,
+          pincodeAgentId: pincodeAgent ? pincodeAgent.user : null,
+          pincodeCommission: 150,
+          divisionalAgentId: divisionalAgent ? divisionalAgent.user : null,
+          divisionalCommission: 50,
+          districtAgentId: districtAgent ? districtAgent.user : null,
+          districtCommission: 50,
+          stateAgentId: stateAgent ? stateAgent.user : null,
+          stateCommission: 50,
+          companyCommission: 200,
+          status: 'Paid',
+        });
+      }
+    }
 
     await Notification.create({
       recipient: shop.createdBy,

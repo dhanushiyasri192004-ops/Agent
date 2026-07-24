@@ -7,7 +7,14 @@ import {
   Store,
   FileCheck,
   Clock,
-  Award
+  Award,
+  ChevronDown,
+  ChevronRight,
+  X,
+  Check,
+  Mail,
+  Phone,
+  Compass
 } from 'lucide-react';
 import {
   LineChart,
@@ -28,9 +35,33 @@ const DistrictDashboard = () => {
   const [metrics, setMetrics] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  // Explorer Tree States
+  const [agentsList, setAgentsList] = useState([]);
+  const [shopsList, setShopsList] = useState([]);
+  const [expandedNodes, setExpandedNodes] = useState({});
+  const [selectedAgentDetails, setSelectedAgentDetails] = useState(null);
+  const [selectedPincodeDetails, setSelectedPincodeDetails] = useState(null);
+  const [activeKpiTab, setActiveKpiTab] = useState(null); // 'divisional-agents', 'pincode-agents', or null
+
   useEffect(() => {
     fetchMetrics();
+    fetchHierarchyData();
   }, []);
+
+  const fetchHierarchyData = async () => {
+    try {
+      const token = user?.token;
+      const headers = { Authorization: `Bearer ${token}` };
+      const [agentsRes, shopsRes] = await Promise.all([
+        axios.get('/api/agents', { headers }),
+        axios.get('/api/shops', { headers })
+      ]);
+      setAgentsList(agentsRes.data || []);
+      setShopsList(shopsRes.data || []);
+    } catch (err) {
+      console.error('Error fetching district hierarchy lists:', err);
+    }
+  };
 
   const fetchMetrics = async () => {
     try {
@@ -42,6 +73,79 @@ const DistrictDashboard = () => {
       console.error('Error fetching district metrics:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const buildHierarchy = () => {
+    const rootName = assignedDistrict;
+    const hierarchy = {
+      name: rootName,
+      type: 'district',
+      id: rootName,
+      divisions: {}
+    };
+
+    const districtRegex = new RegExp(rootName.replace(/District/i, '').trim(), 'i');
+    const districtAgents = agentsList.filter(a => a.district && districtRegex.test(a.district));
+
+    districtAgents.forEach(agent => {
+      if (agent.role === 'District Agent' || agent.role === 'State Agent') return;
+
+      const div = agent.division || 'General Division';
+      const pin = agent.pincode || 'General Pincode';
+
+      if (!hierarchy.divisions[div]) {
+        const divAgent = agentsList.find(a => a.role === 'Divisional Agent' && a.division === div);
+        hierarchy.divisions[div] = {
+          name: div,
+          type: 'division',
+          id: `${rootName}-${div}`,
+          agent: divAgent,
+          pincodes: {}
+        };
+      }
+
+      if (!hierarchy.divisions[div].pincodes[pin]) {
+        hierarchy.divisions[div].pincodes[pin] = {
+          name: pin,
+          type: 'pincode',
+          id: `${rootName}-${div}-${pin}`,
+          agents: []
+        };
+      }
+
+      if (agent.role === 'Pincode Agent') {
+        hierarchy.divisions[div].pincodes[pin].agents.push(agent);
+      }
+    });
+
+    return hierarchy;
+  };
+
+  const toggleNode = (nodeId) => {
+    setExpandedNodes(prev => ({
+      ...prev,
+      [nodeId]: !prev[nodeId]
+    }));
+  };
+
+  const toggleKpiTab = (tab) => {
+    setSelectedAgentDetails(null);
+    setSelectedPincodeDetails(null);
+    if (activeKpiTab === tab) {
+      setActiveKpiTab(null);
+    } else {
+      setActiveKpiTab(tab);
+      const rootName = assignedDistrict;
+      const updatedExpanded = { [rootName]: true };
+      
+      const districtRegex = new RegExp(rootName.replace(/District/i, '').trim(), 'i');
+      const districtAgents = agentsList.filter(a => a.district && districtRegex.test(a.district));
+      
+      districtAgents.forEach(a => {
+        if (a.division) updatedExpanded[`${rootName}-${a.division}`] = true;
+      });
+      setExpandedNodes(updatedExpanded);
     }
   };
 
@@ -60,6 +164,7 @@ const DistrictDashboard = () => {
 
   const pincodesCount = metrics?.pincodesCount || 0;
   const pincodeAgentsCount = metrics?.pincodeAgentsCount || 0;
+  const divisionalAgentsCount = metrics?.divisionalAgentsCount || 0;
   const shopsCount = metrics?.shopsRegisteredCount || 0;
   const reportsCount = metrics?.reportsSubmittedCount || 0;
 
@@ -86,6 +191,7 @@ const DistrictDashboard = () => {
   ];
 
   const pincodeOverview = metrics?.pincodeOverview || [];
+  const hierarchy = buildHierarchy();
 
   return (
     <div className="space-y-6">
@@ -99,43 +205,65 @@ const DistrictDashboard = () => {
       {/* Stats Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         
-        <div className="bg-white border border-slate-200/80 rounded-xl p-5 flex items-center justify-between shadow-sm">
+        {/* 1. Divisional Agents */}
+        <button
+          onClick={() => toggleKpiTab('divisional-agents')}
+          className={`text-left rounded-xl p-5 shadow-md flex flex-col justify-between h-32 relative overflow-hidden transition-all duration-200 hover:scale-[1.02] focus:outline-none ${
+            activeKpiTab === 'divisional-agents' ? 'bg-[#3b82f6] text-white ring-4 ring-[#f5c518] ring-offset-2' : 'bg-[#4f46e5] text-white'
+          }`}
+        >
           <div>
-            <span className="text-3xl font-black text-slate-800">{pincodesCount}</span>
-            <h3 className="text-sm text-slate-500 mt-1.5 font-bold">Pincodes</h3>
+            <p className="text-[10px] uppercase font-black text-indigo-200 tracking-widest opacity-90">Divisional Agents</p>
+            <p className="text-2xl font-black mt-1">
+              {Number(divisionalAgentsCount || 0).toLocaleString()}
+            </p>
           </div>
-          <div className="w-12 h-12 rounded-xl bg-blue-500/10 border border-blue-500/25 flex items-center justify-center text-blue-500">
-            <MapPin className="w-6 h-6" />
+          <div>
+            <Users className="w-5 h-5 opacity-40 absolute bottom-4 right-4" />
+          </div>
+        </button>
+
+        {/* 2. Pincode Agents */}
+        <button
+          onClick={() => toggleKpiTab('pincode-agents')}
+          className={`text-left rounded-xl p-5 shadow-md flex flex-col justify-between h-32 relative overflow-hidden transition-all duration-200 hover:scale-[1.02] focus:outline-none ${
+            activeKpiTab === 'pincode-agents' ? 'bg-[#3b82f6] text-white ring-4 ring-[#f5c518] ring-offset-2' : 'bg-[#6b21a8] text-white'
+          }`}
+        >
+          <div>
+            <p className="text-[10px] uppercase font-black text-purple-200 tracking-widest opacity-90">Pincode Agents</p>
+            <p className="text-2xl font-black mt-1">
+              {Number(pincodeAgentsCount || 0).toLocaleString()}
+            </p>
+          </div>
+          <div>
+            <Users className="w-5 h-5 opacity-40 absolute bottom-4 right-4" />
+          </div>
+        </button>
+
+        {/* 3. Shops Registered */}
+        <div className="bg-[#c2410c] text-white rounded-xl p-5 shadow-md flex flex-col justify-between h-32 relative overflow-hidden">
+          <div>
+            <p className="text-[10px] uppercase font-black text-orange-200 tracking-widest opacity-90">Shops Registered</p>
+            <p className="text-2xl font-black mt-1">
+              {Number(shopsCount || 0).toLocaleString()}
+            </p>
+          </div>
+          <div>
+            <Store className="w-5 h-5 opacity-40 absolute bottom-4 right-4" />
           </div>
         </div>
 
-        <div className="bg-white border border-slate-200/80 rounded-xl p-5 flex items-center justify-between shadow-sm">
+        {/* 4. Reports Submitted */}
+        <div className="bg-[#b45309] text-white rounded-xl p-5 shadow-md flex flex-col justify-between h-32 relative overflow-hidden">
           <div>
-            <span className="text-3xl font-black text-slate-800">{pincodeAgentsCount}</span>
-            <h3 className="text-sm text-slate-500 mt-1.5 font-bold">Pincode Agents</h3>
+            <p className="text-[10px] uppercase font-black text-amber-200 tracking-widest opacity-90">Reports Submitted</p>
+            <p className="text-2xl font-black mt-1">
+              {Number(reportsCount || 0).toLocaleString()}
+            </p>
           </div>
-          <div className="w-12 h-12 rounded-xl bg-indigo-500/10 border border-indigo-500/25 flex items-center justify-center text-indigo-500">
-            <Users className="w-6 h-6" />
-          </div>
-        </div>
-
-        <div className="bg-white border border-slate-200/80 rounded-xl p-5 flex items-center justify-between shadow-sm">
           <div>
-            <span className="text-3xl font-black text-slate-800">{shopsCount}</span>
-            <h3 className="text-sm text-slate-500 mt-1.5 font-bold">Shops Registered</h3>
-          </div>
-          <div className="w-12 h-12 rounded-xl bg-emerald-500/10 border border-emerald-500/25 flex items-center justify-center text-emerald-600">
-            <Store className="w-6 h-6" />
-          </div>
-        </div>
-
-        <div className="bg-white border border-slate-200/80 rounded-xl p-5 flex items-center justify-between shadow-sm">
-          <div>
-            <span className="text-3xl font-black text-slate-800">{reportsCount}</span>
-            <h3 className="text-sm text-slate-500 mt-1.5 font-bold">Reports Submitted</h3>
-          </div>
-          <div className="w-12 h-12 rounded-xl bg-amber-500/10 border border-amber-500/25 flex items-center justify-center text-amber-600">
-            <FileCheck className="w-6 h-6" />
+            <FileCheck className="w-5 h-5 opacity-40 absolute bottom-4 right-4" />
           </div>
         </div>
 
@@ -304,6 +432,227 @@ const DistrictDashboard = () => {
         </div>
 
       </div>
+
+      {/* HIERARCHY EXPLORER MODAL */}
+      {activeKpiTab && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 backdrop-blur-sm">
+          <div className="bg-white border border-slate-200 rounded-2xl max-w-5xl w-full p-6 shadow-2xl grid grid-cols-1 lg:grid-cols-3 gap-6 animate-fadeIn relative">
+            
+            {/* Left Tree Explorer */}
+            <div className="lg:col-span-2 space-y-4">
+              <div className="flex justify-between items-center">
+                <h3 className="text-base font-black text-slate-800">
+                  {activeKpiTab === 'divisional-agents' ? 'Divisional Hierarchy' : 'Pincode Agent Hierarchy'}
+                </h3>
+                <button
+                  onClick={() => setActiveKpiTab(null)}
+                  className="p-1 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-650"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <div className="border border-slate-150 rounded-xl p-4 bg-slate-50/50 space-y-2 overflow-y-auto max-h-[400px]">
+                {/* Root Node */}
+                <div className="space-y-1">
+                  <div
+                    onClick={() => toggleNode(hierarchy.id)}
+                    className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-extrabold text-[#034ea2] hover:bg-slate-100 cursor-pointer select-none"
+                  >
+                    {expandedNodes[hierarchy.id] ? <ChevronDown className="w-4 h-4 text-[#f5c518] shrink-0" /> : <ChevronRight className="w-4 h-4 text-slate-400 shrink-0" />}
+                    <Compass className="w-4.5 h-4.5 text-[#034ea2]" />
+                    <span>{hierarchy.name}</span>
+                  </div>
+
+                  {/* Divisions under District */}
+                  {expandedNodes[hierarchy.id] && (
+                    <div className="pl-6 space-y-1.5 border-l-2 border-slate-200 ml-5 pt-1">
+                      {Object.keys(hierarchy.divisions).map(divKey => {
+                        const divNode = hierarchy.divisions[divKey];
+                        const pinKeys = Object.keys(divNode.pincodes);
+                        return (
+                          <div key={divNode.id} className="space-y-1">
+                            <div
+                              onClick={() => {
+                                toggleNode(divNode.id);
+                                if (divNode.agent) {
+                                  setSelectedAgentDetails(divNode.agent);
+                                  setSelectedPincodeDetails(null);
+                                }
+                              }}
+                              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-slate-100 cursor-pointer select-none transition ${
+                                selectedAgentDetails?._id === divNode.agent?._id && divNode.agent?._id
+                                  ? 'bg-blue-600 text-white shadow-sm'
+                                  : 'text-slate-700'
+                              }`}
+                            >
+                              {expandedNodes[divNode.id] ? <ChevronDown className="w-3.5 h-3.5 text-[#f5c518] shrink-0" /> : <ChevronRight className="w-3.5 h-3.5 text-slate-400 shrink-0" />}
+                              <span>{divNode.name}</span>
+                            </div>
+
+                            {/* Pincodes under Division */}
+                            {expandedNodes[divNode.id] && (
+                              <div className="pl-6 space-y-1.5 border-l border-dashed border-slate-200 ml-4 pt-1">
+                                {pinKeys.map(pinKey => {
+                                  const pinNode = divNode.pincodes[pinKey];
+                                  return (
+                                    <div key={pinNode.id} className="space-y-1">
+                                      <div
+                                        onClick={() => {
+                                          toggleNode(pinNode.id);
+                                          setSelectedAgentDetails(null);
+                                          setSelectedPincodeDetails({
+                                            pincode: pinNode.name,
+                                            agents: pinNode.agents,
+                                            shops: shopsList.filter(s => s.pincode === pinNode.name)
+                                          });
+                                        }}
+                                        className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-[11px] font-bold cursor-pointer select-none transition ${
+                                          selectedPincodeDetails?.pincode === pinNode.name
+                                            ? 'bg-blue-600 text-white shadow-sm'
+                                            : 'text-slate-500 hover:bg-slate-150/40'
+                                        }`}
+                                      >
+                                        {expandedNodes[pinNode.id] ? <ChevronDown className={`w-3 h-3 shrink-0 ${selectedPincodeDetails?.pincode === pinNode.name ? 'text-white' : 'text-[#f5c518]'}`} /> : <ChevronRight className="w-3 h-3 text-slate-400 shrink-0" />}
+                                        <MapPin className={`w-3.5 h-3.5 ${selectedPincodeDetails?.pincode === pinNode.name ? 'text-white' : 'text-slate-400'}`} />
+                                        <span>{pinNode.name}</span>
+                                      </div>
+
+                                      {/* Pincode Agents */}
+                                      {expandedNodes[pinNode.id] && (
+                                        <div className="pl-6 space-y-1 ml-3 pt-1">
+                                          {pinNode.agents.map(agent => (
+                                            <div
+                                              key={agent._id}
+                                              onClick={() => {
+                                                setSelectedAgentDetails(agent);
+                                                setSelectedPincodeDetails(null);
+                                              }}
+                                              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-[11px] font-extrabold cursor-pointer transition ${
+                                                selectedAgentDetails?._id === agent._id
+                                                  ? 'bg-blue-600 text-white shadow-sm'
+                                                  : 'text-slate-700 hover:bg-slate-200/50'
+                                              }`}
+                                            >
+                                              <Users className="w-3.5 h-3.5" />
+                                              <span>{agent.name}</span>
+                                            </div>
+                                          ))}
+                                        </div>
+                                      )}
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Right Details Panel */}
+            <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-md flex flex-col justify-between min-h-[350px]">
+              {selectedAgentDetails ? (
+                <div className="flex flex-col h-full justify-between">
+                  <div>
+                    <div className="flex justify-between items-center mb-4">
+                      <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Agent Profile</span>
+                      <button
+                        onClick={() => setSelectedAgentDetails(null)}
+                        className="text-slate-400 hover:text-slate-650"
+                      >
+                        <X className="w-5 h-5" />
+                      </button>
+                    </div>
+
+                    <div className="flex items-center gap-3.5 mb-5">
+                      <div className="w-12 h-12 rounded-full bg-blue-50 border border-blue-100 flex items-center justify-center font-black text-[#034ea2] text-sm shrink-0">
+                        {selectedAgentDetails.name.charAt(0)}
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-sm font-extrabold text-slate-800">{selectedAgentDetails.name}</span>
+                          <span className="w-4.5 h-4.5 rounded-full bg-blue-500 flex items-center justify-center shrink-0">
+                            <Check className="w-3 h-3 text-white stroke-[3.5]" />
+                          </span>
+                        </div>
+                        <span className="text-[10px] font-bold text-slate-400 block mt-0.5">{selectedAgentDetails.role || 'Agent'}</span>
+                      </div>
+                    </div>
+
+                    <div className="space-y-4 py-4 border-t border-b border-slate-100 my-4 text-xs font-bold">
+                      <div className="flex items-center justify-between">
+                        <span className="text-slate-500">Mobile</span>
+                        <span className="text-slate-800">{selectedAgentDetails.phone || 'N/A'}</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-slate-500">Region Bounds</span>
+                        <span className="text-slate-850 text-right text-[11px] max-w-[180px] truncate">
+                          {selectedAgentDetails.role === 'Divisional Agent'
+                            ? `${selectedAgentDetails.district} → ${selectedAgentDetails.division}`
+                            : `${selectedAgentDetails.division} → ${selectedAgentDetails.pincode}`}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ) : selectedPincodeDetails ? (
+                <div className="flex flex-col h-full justify-between overflow-y-auto max-h-[450px] pr-1">
+                  <div>
+                    <div className="flex justify-between items-center mb-4">
+                      <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Pincode Details</span>
+                      <button
+                        onClick={() => setSelectedPincodeDetails(null)}
+                        className="text-slate-400 hover:text-slate-650"
+                      >
+                        <X className="w-5 h-5" />
+                      </button>
+                    </div>
+
+                    <div className="flex items-center gap-3 mb-5">
+                      <div className="w-12 h-12 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center font-black text-blue-600 text-sm shrink-0">
+                        <MapPin className="w-6 h-6" />
+                      </div>
+                      <div>
+                        <span className="text-base font-extrabold text-slate-800">Pincode: {selectedPincodeDetails.pincode}</span>
+                        <span className="text-[10px] font-bold text-slate-400 block mt-0.5">{hierarchy.name}</span>
+                      </div>
+                    </div>
+
+                    <div className="space-y-4 py-4 border-t border-b border-slate-100 my-4 text-xs font-bold">
+                      <div className="flex items-center justify-between">
+                        <span className="text-slate-500">Pincode Agent(s)</span>
+                        <span className="text-slate-800 text-right max-w-[150px] truncate">
+                          {selectedPincodeDetails.agents?.length > 0
+                            ? selectedPincodeDetails.agents.map(a => a.name).join(', ')
+                            : 'No Pincode Agent Assigned'}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-slate-500">Total Shops</span>
+                        <span className="text-slate-800">{selectedPincodeDetails.shops?.length || 0} Shops</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex-1 flex flex-col items-center justify-center text-center p-6 text-slate-400">
+                  <Users className="w-10 h-10 text-slate-355 mb-2" />
+                  <h4 className="text-xs font-bold text-slate-600 font-black">No Selection</h4>
+                  <p className="text-[10px] font-semibold mt-1">
+                    Select a Division, Pincode or Pincode Agent in the left tree.
+                  </p>
+                </div>
+              )}
+            </div>
+
+          </div>
+        </div>
+      )}
 
     </div>
   );

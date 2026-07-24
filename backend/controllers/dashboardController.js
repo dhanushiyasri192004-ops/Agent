@@ -3,6 +3,7 @@ import Agent from '../models/Agent.js';
 import Shop from '../models/Shop.js';
 import Report from '../models/Report.js';
 import ActivityLog from '../models/ActivityLog.js';
+import { seedData } from '../seedDB.js';
 
 export const getDashboardMetrics = async (req, res, next) => {
   const role = req.user.role;
@@ -10,72 +11,77 @@ export const getDashboardMetrics = async (req, res, next) => {
   try {
     let metrics = {};
 
-    if (role === 'State Agent') {
+    if (role === 'State Agent' || role === 'Admin') {
       const agentProfile = await Agent.findOne({ user: req.user._id });
-      if (!agentProfile) {
-        res.status(404);
-        throw new Error('State Agent profile not found');
-      }
+      const stateName = agentProfile ? agentProfile.state : 'Tamil Nadu';
 
-      const stateName = agentProfile.state;
-
-      const subAgents = await Agent.find({ state: stateName });
-      const divisionsCount = new Set(subAgents.filter(a => a.division).map(a => a.division)).size;
-      const districtsCount = new Set(subAgents.filter(a => a.district).map(a => a.district)).size;
-      const pincodeAgentsCount = subAgents.filter(a => a.role === 'Pincode Agent').length;
-      const divisionalAgentsCount = subAgents.filter(a => a.role === 'Divisional Agent').length;
+      const subAgents = await Agent.find({ role: { $ne: 'State Agent' } });
       const districtAgentsCount = subAgents.filter(a => a.role === 'District Agent').length;
+      const divisionalAgentsCount = subAgents.filter(a => a.role === 'Divisional Agent').length;
+      const pincodeAgentsCount = subAgents.filter(a => a.role === 'Pincode Agent').length;
+      const stateAgentsCount = (await Agent.countDocuments({ role: 'State Agent' })) || 1;
 
-      const shopsRegistered = await Shop.countDocuments({ state: stateName });
-      const activeShops = await Shop.countDocuments({ state: stateName, verificationStatus: 'Verified' });
+      const totalAgentsCount = districtAgentsCount + divisionalAgentsCount + pincodeAgentsCount;
 
-      const pendingReportsCount = await Report.countDocuments({ assignedTo: req.user._id, status: 'Pending' });
+      const registeredDistricts = new Set(
+        subAgents.filter(a => a.role === 'District Agent' || (a.district && a.district !== 'Unassigned' && a.district !== 'Unassigned District')).map(a => a.district || a.name)
+      );
+      const registeredDivisions = new Set(
+        subAgents.filter(a => a.role === 'Divisional Agent' || (a.division && a.division !== 'Unassigned' && a.division !== 'Unassigned Division')).map(a => a.division || a.name)
+      );
 
-      const subAgentIds = subAgents.map(a => a.user);
-      const recentActivities = await ActivityLog.find({ user: { $in: [...subAgentIds, req.user._id] } })
+      const districtsCount = districtAgentsCount > 0 ? Math.max(registeredDistricts.size, districtAgentsCount) : registeredDistricts.size;
+      const divisionsCount = divisionalAgentsCount > 0 ? Math.max(registeredDivisions.size, divisionalAgentsCount) : registeredDivisions.size;
+
+      const shopsRegistered = await Shop.countDocuments({});
+      const activeShops = await Shop.countDocuments({ verificationStatus: 'Verified' });
+      const pendingReportsCount = await Report.countDocuments({ status: 'Pending' });
+
+      const recentActivities = await ActivityLog.find({})
         .populate('user', 'email role')
         .sort({ createdAt: -1 })
         .limit(10);
 
-      const divisionStats = await Shop.aggregate([
-        { $match: { state: stateName } },
-        { $group: { _id: '$division', count: { $sum: 1 } } }
-      ]);
-
       metrics = {
-        divisionsCount: divisionsCount,
-        districtsCount: districtsCount,
-        pincodeAgentsCount: pincodeAgentsCount,
+        totalAgentsCount,
+        divisionsCount,
+        districtsCount,
+        pincodeAgentsCount,
         shopsRegisteredCount: shopsRegistered,
         totalShops: shopsRegistered,
         activeShops,
         pendingReportsCount,
         agentDistribution: {
-          divisionalAgents: divisionalAgentsCount,
+          stateAgents: stateAgentsCount,
           districtAgents: districtAgentsCount,
+          divisionalAgents: divisionalAgentsCount,
           pincodeAgents: pincodeAgentsCount,
         },
-        divisionPerformance: divisionStats.map(d => ({ name: d._id, value: d.count })),
         recentActivities,
+        trendData: [],
       };
 
     } else if (role === 'Divisional Agent') {
       const agentProfile = await Agent.findOne({ user: req.user._id });
-      if (!agentProfile) {
-        res.status(404);
-        throw new Error('Divisional Agent profile not found');
-      }
+      const resolvedDivision = agentProfile?.division || req.user.division || 'Attur Division';
+      const resolvedDistrict = agentProfile?.district || req.user.district || 'Salem District';
+      const resolvedState = agentProfile?.state || req.user.state || 'Tamil Nadu';
 
-      const { state, district, division } = agentProfile;
+      const divRegex = new RegExp(resolvedDivision.replace(/Division/i, '').trim(), 'i');
 
-      const subAgents = await Agent.find({ state, district, division });
+      const subAgents = await Agent.find({
+        $or: [{ division: divRegex }, { district: resolvedDistrict }]
+      });
       const pincodeAgentsCount = subAgents.filter(a => a.role === 'Pincode Agent').length;
+      const divisionalPincodeAgents = subAgents.filter(a => a.role === 'Pincode Agent' && a.pincode && a.pincode !== 'Unassigned' && a.pincode !== 'Unassigned Pincode');
+      const uniquePincodes = new Set(divisionalPincodeAgents.map(a => a.pincode));
+      const pincodesCount = uniquePincodes.size || (pincodeAgentsCount > 0 ? 1 : 0);
 
-      const shopsRegistered = await Shop.countDocuments({ state, district, division });
+      const shopsRegistered = await Shop.countDocuments({ division: divRegex });
       const pendingReportsCount = await Report.countDocuments({ assignedTo: req.user._id, status: 'Pending' });
 
       const pincodeStats = await Shop.aggregate([
-        { $match: { state, district, division } },
+        { $match: { division: divRegex } },
         { $group: { _id: '$pincode', count: { $sum: 1 } } }
       ]);
 
@@ -86,8 +92,11 @@ export const getDashboardMetrics = async (req, res, next) => {
         .limit(10);
 
       metrics = {
+        division: resolvedDivision,
+        district: resolvedDistrict,
         districtsCount: 1,
         districtAgentsCount: 1,
+        pincodesCount: pincodesCount,
         pincodeAgentsCount: pincodeAgentsCount,
         shopsRegisteredCount: shopsRegistered,
         pendingReportsCount,
@@ -95,7 +104,7 @@ export const getDashboardMetrics = async (req, res, next) => {
           districtAgents: 1,
           pincodeAgents: pincodeAgentsCount,
         },
-        districtPerformance: pincodeStats.map(p => ({ name: p._id, value: p.count })),
+        districtPerformance: pincodeStats.map(p => ({ name: p._id || 'General', value: p.count })),
         recentActivities,
       };
 
@@ -202,6 +211,28 @@ export const getDashboardMetrics = async (req, res, next) => {
     }
 
     res.json(metrics);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const resetDashboardDatabase = async (req, res, next) => {
+  try {
+    // Delete all shops, reports, and activity logs
+    await Shop.deleteMany({});
+    await Report.deleteMany({});
+    await ActivityLog.deleteMany({});
+
+    // Delete all sub-agent profiles (exclude State Agent)
+    await Agent.deleteMany({ role: { $ne: 'State Agent' } });
+
+    // Delete all users except State Agent
+    await User.deleteMany({ role: { $ne: 'State Agent' } });
+
+    // Seed default hierarchy database structure
+    await seedData(false);
+
+    res.json({ message: 'Database reset and default hierarchy re-seeded successfully!' });
   } catch (error) {
     next(error);
   }

@@ -2,12 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate, Link } from 'react-router-dom';
 import { login, reset } from '../../redux/slices/authSlice.js';
-import { Lock, Mail, ShieldAlert, Award } from 'lucide-react';
+import { Lock, Mail, ShieldAlert, Award, Eye, EyeOff } from 'lucide-react';
 import axios from 'axios';
 
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [forgotEmail, setForgotEmail] = useState('');
   const [showForgot, setShowForgot] = useState(false);
   const [forgotMessage, setForgotMessage] = useState('');
@@ -120,6 +121,8 @@ const Login = () => {
                 </span>
                 <input
                   type="email"
+                  name="userEmail"
+                  autoComplete="email"
                   required
                   placeholder="agent@forgeindia.com"
                   value={email}
@@ -138,13 +141,23 @@ const Login = () => {
                   <Lock className="w-5 h-5" />
                 </span>
                 <input
-                  type="password"
+                  type={showPassword ? "text" : "password"}
+                  name="userPassword"
+                  autoComplete="current-password"
                   required
                   placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full bg-forge-card/50 border border-forge-card hover:border-forge-gold/30 focus:border-forge-gold text-white pl-10 pr-4 py-3 rounded-lg outline-none transition duration-200"
+                  className="w-full bg-forge-card/50 border border-forge-card hover:border-forge-gold/30 focus:border-forge-gold text-white pl-10 pr-10 py-3 rounded-lg outline-none transition duration-200"
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-white transition cursor-pointer"
+                  title={showPassword ? "Hide Password" : "Show Password"}
+                >
+                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                </button>
               </div>
             </div>
 

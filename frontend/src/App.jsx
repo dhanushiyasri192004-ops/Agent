@@ -12,11 +12,13 @@ import DivisionalDashboard from './pages/dashboard/DivisionalDashboard.jsx';
 import DistrictDashboard from './pages/dashboard/DistrictDashboard.jsx';
 import PincodeDashboard from './pages/dashboard/PincodeDashboard.jsx';
 import Analytics from './pages/dashboard/Analytics.jsx';
+import Commission from './pages/dashboard/Commission.jsx';
 
 // Agent Pages
 import DivisionalAgents from './pages/agent/DivisionalAgents.jsx';
 import DistrictAgents from './pages/agent/DistrictAgents.jsx';
 import PincodeAgents from './pages/agent/PincodeAgents.jsx';
+import AgentManagement from './pages/agent/AgentManagement.jsx';
 
 // Shop Pages
 import ShopRegistration from './pages/shop/ShopRegistration.jsx';
@@ -130,38 +132,31 @@ function App() {
             </PrivateRoute>
           }
         />
+        <Route
+          path="/commission"
+          element={
+            <PrivateRoute>
+              <DashboardLayout>
+                <Commission />
+              </DashboardLayout>
+            </PrivateRoute>
+          }
+        />
 
         {/* Agent Hierarchy management */}
         <Route
-          path="/divisional-agents"
+          path="/agent-management"
           element={
             <PrivateRoute>
               <DashboardLayout>
-                <DivisionalAgents />
+                <AgentManagement />
               </DashboardLayout>
             </PrivateRoute>
           }
         />
-        <Route
-          path="/district-agents"
-          element={
-            <PrivateRoute>
-              <DashboardLayout>
-                <DistrictAgents />
-              </DashboardLayout>
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="/pincode-agents"
-          element={
-            <PrivateRoute>
-              <DashboardLayout>
-                <PincodeAgents />
-              </DashboardLayout>
-            </PrivateRoute>
-          }
-        />
+        <Route path="/divisional-agents" element={<Navigate to="/agent-management" replace />} />
+        <Route path="/district-agents" element={<Navigate to="/agent-management" replace />} />
+        <Route path="/pincode-agents" element={<Navigate to="/agent-management" replace />} />
 
         <Route
           path="/vendor-management"

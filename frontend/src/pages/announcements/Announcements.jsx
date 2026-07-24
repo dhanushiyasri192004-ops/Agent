@@ -1,11 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Megaphone, Pin, Plus, Calendar, Users, X, ShieldAlert, Check } from 'lucide-react';
+import api from '../../services/api.js';
 
 const Announcements = () => {
   const [activeTab, setActiveTab] = useState('All Announcements');
   const [showModal, setShowModal] = useState(false);
 
   const [announcements, setAnnouncements] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   // Modal Form State
   const [title, setTitle] = useState('');
@@ -17,7 +19,22 @@ const Announcements = () => {
   const [success, setSuccess] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
-  const handleCreateAnnouncement = (e) => {
+  useEffect(() => {
+    fetchAnnouncements();
+  }, []);
+
+  const fetchAnnouncements = async () => {
+    try {
+      const response = await api.get('/api/announcements');
+      setAnnouncements(response.data || []);
+    } catch (err) {
+      console.error('Error fetching announcements:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCreateAnnouncement = async (e) => {
     e.preventDefault();
     setError('');
     setSuccess('');
@@ -29,31 +46,32 @@ const Announcements = () => {
 
     setSubmitting(true);
 
-    const today = new Date();
-    const formattedDate = `${String(today.getDate()).padStart(2, '0')} ${today.toLocaleString('en-US', { month: 'short' })} ${today.getFullYear()}`;
+    try {
+      await api.post('/api/announcements', {
+        title,
+        desc,
+        target,
+        isPinned,
+        status
+      });
 
-    const newAnnouncement = {
-      title,
-      desc,
-      date: formattedDate,
-      target,
-      isPinned,
-      status
-    };
+      setSuccess('Announcement published successfully!');
+      fetchAnnouncements();
 
-    setAnnouncements([newAnnouncement, ...announcements]);
-    setSuccess('Announcement published successfully!');
-
-    setTimeout(() => {
-      setShowModal(false);
-      setTitle('');
-      setDesc('');
-      setTarget('All Agents');
-      setStatus('Active');
-      setIsPinned(false);
-      setSuccess('');
+      setTimeout(() => {
+        setShowModal(false);
+        setTitle('');
+        setDesc('');
+        setTarget('All Agents');
+        setStatus('Active');
+        setIsPinned(false);
+        setSuccess('');
+        setSubmitting(false);
+      }, 1200);
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to publish announcement');
       setSubmitting(false);
-    }, 1200);
+    }
   };
 
   return (

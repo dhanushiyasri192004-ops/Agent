@@ -15,9 +15,9 @@ const demoDefaultUser = {
 const getInitialUser = () => {
   try {
     const item = localStorage.getItem('user');
-    return item ? JSON.parse(item) : demoDefaultUser;
+    return item ? JSON.parse(item) : null;
   } catch {
-    return demoDefaultUser;
+    return null;
   }
 };
 
@@ -25,8 +25,8 @@ const storedUser = getInitialUser();
 
 const initialState = {
   user: storedUser,
-  token: storedUser ? storedUser.token : 'demo-token-641001',
-  isAuthenticated: true,
+  token: storedUser ? storedUser.token : null,
+  isAuthenticated: storedUser ? true : false,
   isLoading: false,
   isError: false,
   message: '',

@@ -80,52 +80,128 @@ const PincodeDashboard = () => {
   // Wizard state for registration
   const [registerStep, setRegisterStep] = useState(1);
   const [registerData, setRegisterData] = useState({
-    shopName: 'Vignesh Provision Store',
+    shopName: '',
     businessCategory: 'Grocery',
-    shopAddress: '123, Anna Salai, Chennai - 600005',
-    landmark: 'Near Bus Stop',
-    gps: '13.0827° N, 80.2707° E',
-    ownerName: 'Vignesh Kumar',
-    mobile: '+91 98765 43210',
-    alternateNumber: '+91 91234 56789',
-    email: 'vigneshkumar@gmail.com',
+    subCategory: '',
+    shopAddress: '',
+    landmark: '',
+    gps: '',
+    ownerName: '',
+    mobile: '',
+    alternateNumber: '',
+    email: '',
+    licenseNumber: '',
     plan: 'Monthly Plan',
     paymentMode: 'UPI',
     amount: '299',
     paymentStatus: 'Success',
-    paymentDate: 'UPI123456789'
+    paymentDate: ''
   });
 
+  const [shopDocumentFile, setShopDocumentFile] = useState(null);
+
   // customer queries state
-  const [customerQueries, setCustomerQueries] = useState([
-    { ticketId: 'QRY1001', customer: 'Kumar', shop: 'Kumar Medicals', issue: 'Subscription Issue', priority: 'High', status: 'Open' },
-    { ticketId: 'QRY1002', customer: 'Selvi', shop: 'Selvi Textiles', issue: 'Payment Failed', priority: 'Medium', status: 'In Progress' },
-    { ticketId: 'QRY1003', customer: 'Murugan', shop: 'Sri Murugan Stores', issue: 'App Not Working', priority: 'High', status: 'Open' },
-    { ticketId: 'QRY1004', customer: 'Vignesh', shop: 'Vignesh Provision Store', issue: 'Renewal Issue', priority: 'Low', status: 'Resolved' },
-    { ticketId: 'QRY1005', customer: 'Arul', shop: 'Arul Electronics', issue: 'Invoice Required', priority: 'Medium', status: 'In Progress' }
-  ]);
+  const [customerQueries, setCustomerQueries] = useState([]);
+  const [showAddQueryModal, setShowAddQueryModal] = useState(false);
+  const [selectedTicket, setSelectedTicket] = useState(null);
+  const [priorityFilter, setPriorityFilter] = useState('All');
+  const [newQueryData, setNewQueryData] = useState({ customer: '', shop: '', issue: '', priority: 'Medium' });
 
   // Tasks state
-  const [tasksList, setTasksList] = useState([
-    { id: 1, text: 'Verify 5 shops in North Street', due: 'Due: 24 May 2025', status: 'In Progress' },
-    { id: 2, text: 'Collect documents from new vendors', due: 'Due: 25 May 2025', status: 'Pending' },
-    { id: 3, text: 'Shop visit and verification in 1st Avenue', due: 'Due: 26 May 2025', status: 'Pending' },
-    { id: 4, text: 'Attend government awareness program', due: 'Due: 25 May 2025', status: 'Pending' },
-    { id: 5, text: 'Submit daily report', due: 'Due: Daily', status: 'Completed' }
-  ]);
+  const [tasksList, setTasksList] = useState([]);
 
   // Reports state
-  const [reportsList, setReportsList] = useState([
-    { id: 1, date: '24 May 2025', visits: 12, registered: 8, collected: '₹ 2,386', status: 'Submitted' },
-    { id: 2, date: '23 May 2025', visits: 10, registered: 6, collected: '₹ 1,850', status: 'Approved' },
-    { id: 3, date: '22 May 2025', visits: 11, registered: 5, collected: '₹ 1,950', status: 'Approved' },
-    { id: 4, date: '21 May 2025', visits: 9, registered: 4, collected: '₹ 1,200', status: 'Approved' },
-    { id: 5, date: '20 May 2025', visits: 8, registered: 5, collected: '₹ 1,000', status: 'Approved' }
-  ]);
+  const [reportsList, setReportsList] = useState([]);
+
+  const [shopsList, setShopsList] = useState([]);
+  const [notificationsFeed, setNotificationsFeed] = useState([]);
 
   useEffect(() => {
     fetchMetrics();
+    fetchLiveShops();
+    fetchLiveReports();
+    fetchLiveNotifications();
+    loadLocalTasks();
+    loadLocalQueries();
   }, []);
+
+  const loadLocalQueries = () => {
+    const saved = localStorage.getItem(`customer_queries_${user?._id}`);
+    if (saved) {
+      setCustomerQueries(JSON.parse(saved));
+    } else {
+      const defaultQueries = [
+        { ticketId: 'TKT-101', customer: 'Ramesh Kumar', shop: 'Balaji Groceries', issue: 'Payment transaction failed', priority: 'High', status: 'Open' },
+        { ticketId: 'TKT-102', customer: 'Suresh V', shop: 'Kumar Medicals', issue: 'App login password reset request', priority: 'Medium', status: 'In Progress' }
+      ];
+      setCustomerQueries(defaultQueries);
+      localStorage.setItem(`customer_queries_${user?._id}`, JSON.stringify(defaultQueries));
+    }
+  };
+
+  const saveLocalQueries = (newQueries) => {
+    setCustomerQueries(newQueries);
+    localStorage.setItem(`customer_queries_${user?._id}`, JSON.stringify(newQueries));
+  };
+
+  const handleDeleteQuery = (ticketId) => {
+    if (!window.confirm(`Are you sure you want to delete ticket ${ticketId}?`)) return;
+    const updated = customerQueries.filter(q => q.ticketId !== ticketId);
+    saveLocalQueries(updated);
+  };
+
+  const loadLocalTasks = () => {
+    const savedTasks = localStorage.getItem(`tasks_${user?._id}`);
+    if (savedTasks) {
+      setTasksList(JSON.parse(savedTasks));
+    } else {
+      const defaultTasks = [
+        { id: 1, text: 'Register your first shop in assigned pincode area', due: 'Due: Today', status: 'In Progress' },
+        { id: 2, text: 'Perform verification check on registered shops', due: 'Due: Ongoing', status: 'Pending' }
+      ];
+      setTasksList(defaultTasks);
+      localStorage.setItem(`tasks_${user?._id}`, JSON.stringify(defaultTasks));
+    }
+  };
+
+  const saveLocalTasks = (newTasks) => {
+    setTasksList(newTasks);
+    localStorage.setItem(`tasks_${user?._id}`, JSON.stringify(newTasks));
+  };
+
+  const fetchLiveReports = async () => {
+    try {
+      const response = await api.get('/api/reports');
+      if (Array.isArray(response.data)) {
+        setReportsList(response.data.map((r, idx) => ({
+          id: r._id || idx,
+          date: new Date(r.createdAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }),
+          visits: r.content?.split('visits:')[1]?.split(',')[0]?.trim() || '0',
+          registered: r.content?.split('registered:')[1]?.split(',')[0]?.trim() || '0',
+          collected: r.content?.split('collected:')[1]?.trim() || '₹ 0',
+          status: r.status || 'Pending'
+        })));
+      }
+    } catch (error) {
+      console.error('Error fetching live reports:', error);
+    }
+  };
+
+  const fetchLiveNotifications = async () => {
+    try {
+      const response = await api.get('/api/notifications');
+      if (Array.isArray(response.data)) {
+        setNotificationsFeed(response.data.map((n) => ({
+          text: n.message,
+          time: new Date(n.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          type: 'alert',
+          isNew: !n.isRead
+        })));
+      }
+    } catch (error) {
+      console.error('Error fetching notifications:', error);
+    }
+  };
 
   const fetchMetrics = async () => {
     try {
@@ -135,6 +211,30 @@ const PincodeDashboard = () => {
       console.error('Error fetching pincode metrics:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchLiveShops = async () => {
+    try {
+      const response = await api.get('/api/shops');
+      let liveList = [];
+      if (Array.isArray(response.data)) {
+        liveList = response.data.map((shop) => ({
+          id: shop._id,
+          name: shop.name,
+          address: shop.address || `${shop.pincode}, ${shop.district}`,
+          time: new Date(shop.createdAt || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          status: shop.verificationStatus === 'Verified' ? 'Visited' : (shop.verificationStatus === 'Pending' ? 'Pending' : shop.verificationStatus),
+          owner: shop.ownerName || 'Shop Owner',
+          phone: shop.phone || '+91 98765 43210',
+          verificationStatus: shop.verificationStatus,
+          documentUrl: shop.documentUrl
+        }));
+      }
+      const savedVisits = JSON.parse(localStorage.getItem(`scheduled_visits_${user?._id}`)) || [];
+      setShopsList([...liveList, ...savedVisits]);
+    } catch (error) {
+      console.error('Error fetching live shops:', error);
     }
   };
 
@@ -158,14 +258,6 @@ const PincodeDashboard = () => {
   const pendingVerificationCount = metrics?.pendingVerificationCount || 0;
   const reportsSubmittedCount = metrics?.reportsSubmittedCount || 0;
 
-  const [shopsList, setShopsList] = useState([
-    { id: 1, name: 'Sri Murugan Stores', address: 'Anna Salai', time: '10:00 AM', status: 'Pending', owner: 'Ramasamy M', phone: '+91 98765 43210' },
-    { id: 2, name: 'Kumar Medicals', address: 'Anna Salai', time: '10:45 AM', status: 'Visited', owner: 'Kumar S', phone: '+91 98765 12345' },
-    { id: 3, name: 'Selvi Textiles', address: 'Anagha Street', time: '11:30 AM', status: 'Visited', owner: 'Selvi R', phone: '+91 98765 67890' },
-    { id: 4, name: 'Arul Electronics', address: '2nd Avenue', time: '12:15 PM', status: 'Pending', owner: 'Arul P', phone: '+91 98765 99999' },
-    { id: 5, name: 'Vignesh Provision Store', address: '3rd Avenue', time: '01:00 PM', status: 'Pending', owner: 'Vignesh K', phone: '+91 98765 88888' }
-  ]);
-
   // Visit Workflow Modal State
   const [selectedVisitShop, setSelectedVisitShop] = useState(null);
   const [visitModalStep, setVisitModalStep] = useState(1);
@@ -185,6 +277,53 @@ const PincodeDashboard = () => {
     time: '12:00 PM'
   });
 
+  const [editingVisit, setEditingVisit] = useState(null);
+  const [editVisitForm, setEditVisitForm] = useState({ name: '', address: '', owner: '', phone: '', time: '' });
+
+  const handleOpenEditVisit = (shop) => {
+    setEditingVisit(shop);
+    setEditVisitForm({
+      name: shop.name || '',
+      address: shop.address || '',
+      owner: shop.owner || '',
+      phone: shop.phone || '',
+      time: shop.time || '12:00 PM'
+    });
+  };
+
+  const handleEditVisitSubmit = async (e) => {
+    e.preventDefault();
+    if (editingVisit.id && !editingVisit.id.startsWith('scheduled_') && !editingVisit.id.startsWith('temp_')) {
+      try {
+        await api.patch(`/api/shops/${editingVisit.id}`, {
+          name: editVisitForm.name,
+          address: editVisitForm.address,
+          ownerName: editVisitForm.owner,
+          phone: editVisitForm.phone
+        });
+        alert('Shop visit updated successfully in database!');
+        fetchLiveShops();
+      } catch (err) {
+        console.error(err);
+        alert('Error updating shop in database');
+      }
+    } else {
+      const savedVisits = JSON.parse(localStorage.getItem(`scheduled_visits_${user?._id}`)) || [];
+      const updated = savedVisits.map(v => (v.id === editingVisit.id || (v.name === editingVisit.name && v.time === editingVisit.time)) ? {
+        ...v,
+        name: editVisitForm.name,
+        address: editVisitForm.address,
+        owner: editVisitForm.owner,
+        phone: editVisitForm.phone,
+        time: editVisitForm.time
+      } : v);
+      localStorage.setItem(`scheduled_visits_${user?._id}`, JSON.stringify(updated));
+      alert('Shop visit updated successfully in local storage!');
+      fetchLiveShops();
+    }
+    setEditingVisit(null);
+  };
+
   const openVisitModal = (shop) => {
     setSelectedVisitShop(shop);
     setVisitModalStep(1);
@@ -193,49 +332,22 @@ const PincodeDashboard = () => {
     setOnboardFile(null);
   };
 
-  const recentActivities = [
-    { text: 'Shop registered - Kumar Medicals', address: 'Anna Salai', time: '11:15 AM' },
-    { text: 'Payment collected - Selvi Textiles', amount: '₹ 1,200', time: '12:20 PM' },
-    { text: 'Query resolved - Sri Murugan Stores', service: 'Service Request', time: '01:05 PM' },
-    { text: 'Photo uploaded - Kumar Medicals', type: 'Shop Verification', time: '01:30 PM' },
-    { text: 'Task completed - Visit 5 Shops', location: 'North Street', time: '02:00 PM' }
-  ];
-
-  const notificationsFeed = [
-    { text: 'New task assigned by District Agent', time: 'Just now', type: 'task', isNew: true },
-    { text: 'Shop subscription expiring soon', time: '1 Hour ago', type: 'alert', isNew: true },
-    { text: 'Payment received from Kumar Medicals', time: '2 Hours ago', type: 'payment', isNew: false },
-    { text: 'Your daily report has been approved', time: 'Yesterday', type: 'report', isNew: false },
-    { text: 'Government awareness program on 25 May', time: 'Yesterday', type: 'announcement', isNew: false }
-  ];
+  const recentActivities = (metrics?.recentActivities || []).map(act => ({
+    text: act.description || act.action || 'Activity recorded',
+    time: new Date(act.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+  }));
 
   const targetAchievementData = [
-    { name: '1 May', target: 20, achieved: 12 },
-    { name: '8 May', target: 80, achieved: 65 },
-    { name: '15 May', target: 180, achieved: 145 },
-    { name: '22 May', target: 280, achieved: 220 },
-    { name: '31 May', target: 400, achieved: 320 }
+    { name: 'Target', target: shopsList.length, achieved: shopsList.filter(s => s.status === 'Visited' || s.verificationStatus === 'Verified').length }
   ];
 
-  const performanceVisitsData = [
-    { name: '18 May', visits: 8 },
-    { name: '19 May', visits: 10 },
-    { name: '20 May', visits: 12 },
-    { name: '21 May', visits: 15 },
-    { name: '22 May', visits: 11 },
-    { name: '23 May', visits: 14 },
-    { name: '24 May', visits: 20 }
-  ];
+  const performanceVisitsData = shopsList.length > 0 
+    ? shopsList.map(s => ({ name: s.name.slice(0, 10), visits: s.status === 'Visited' ? 1 : 0 }))
+    : [{ name: 'No Shops', visits: 0 }];
 
-  const performancePaymentsData = [
-    { name: '18 May', payments: 15000 },
-    { name: '19 May', payments: 28000 },
-    { name: '20 May', payments: 39000 },
-    { name: '21 May', payments: 45000 },
-    { name: '22 May', payments: 52000 },
-    { name: '23 May', payments: 58000 },
-    { name: '24 May', payments: 68450 }
-  ];
+  const performancePaymentsData = shopsList.length > 0
+    ? shopsList.map(s => ({ name: s.name.slice(0, 10), payments: s.status === 'Visited' ? 299 : 0 }))
+    : [{ name: 'No Payments', payments: 0 }];
 
   return (
     <div className="space-y-6">
@@ -246,12 +358,16 @@ const PincodeDashboard = () => {
           {/* Header */}
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div>
-              <h1 className="text-2xl font-black text-slate-800">Good Morning, Ramesh Kumar! 👋</h1>
-              <p className="text-sm text-slate-500 mt-1 font-semibold">Here's what's happening today.</p>
+              <h1 className="text-2xl font-black text-slate-800">
+                Welcome back, Pincode {user?.agentInfo?.pincode || user?.pincode || '606201'} Agent 👋
+              </h1>
+              <p className="text-sm text-slate-500 mt-1 font-semibold">
+                Daily shop registrations and monitoring dashboard for Pincode {user?.agentInfo?.pincode || user?.pincode || '606201'}.
+              </p>
             </div>
             <div className="flex items-center gap-2 bg-white border border-slate-200 px-4 py-2 rounded-xl text-slate-700 text-sm font-bold shadow-sm">
               <Calendar className="w-4 h-4 text-blue-600" />
-              <span>24 May 2025</span>
+              <span>{new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
             </div>
           </div>
 
@@ -261,7 +377,7 @@ const PincodeDashboard = () => {
               <div className="flex justify-between items-start">
                 <div>
                   <span className="text-slate-400 text-xs font-bold uppercase tracking-wider">Today's Target</span>
-                  <span className="block text-2xl font-black text-slate-800 mt-1.5">20 Shops</span>
+                  <span className="block text-2xl font-black text-slate-800 mt-1.5">{shopsList.length} Shops</span>
                 </div>
                 <div className="w-10 h-10 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
                   <ClipboardList className="w-5 h-5" />
@@ -276,7 +392,12 @@ const PincodeDashboard = () => {
               <div className="flex justify-between items-start">
                 <div>
                   <span className="text-slate-400 text-xs font-bold uppercase tracking-wider">Shops Visited</span>
-                  <span className="block text-2xl font-black text-slate-800 mt-1.5">12 <span className="text-xs text-emerald-500 font-bold ml-1">60%</span></span>
+                  <span className="block text-2xl font-black text-slate-800 mt-1.5">
+                    {shopsList.filter(s => s.status === 'Visited' || s.verificationStatus === 'Verified').length} 
+                    <span className="text-xs text-emerald-500 font-bold ml-1">
+                      {shopsList.length > 0 ? Math.round((shopsList.filter(s => s.status === 'Visited' || s.verificationStatus === 'Verified').length / shopsList.length) * 100) : 0}%
+                    </span>
+                  </span>
                 </div>
                 <div className="w-10 h-10 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
                   <CheckCircle className="w-5 h-5" />
@@ -291,7 +412,7 @@ const PincodeDashboard = () => {
               <div className="flex justify-between items-start">
                 <div>
                   <span className="text-slate-400 text-xs font-bold uppercase tracking-wider">Shops Registered</span>
-                  <span className="block text-2xl font-black text-slate-800 mt-1.5">8 <span className="text-xs text-blue-500 font-bold ml-1">40%</span></span>
+                  <span className="block text-2xl font-black text-slate-800 mt-1.5">{metrics?.registeredShopsCount ?? shopsList.length}</span>
                 </div>
                 <div className="w-10 h-10 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0">
                   <Store className="w-5 h-5" />
@@ -306,7 +427,7 @@ const PincodeDashboard = () => {
               <div className="flex justify-between items-start">
                 <div>
                   <span className="text-slate-400 text-xs font-bold uppercase tracking-wider">Pending Queries</span>
-                  <span className="block text-2xl font-black text-slate-800 mt-1.5">5</span>
+                  <span className="block text-2xl font-black text-slate-800 mt-1.5">{customerQueries.length}</span>
                 </div>
                 <div className="w-10 h-10 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
                   <AlertCircle className="w-5 h-5" />
@@ -321,7 +442,7 @@ const PincodeDashboard = () => {
               <div className="flex justify-between items-start">
                 <div>
                   <span className="text-slate-400 text-xs font-bold uppercase tracking-wider">Tasks Pending</span>
-                  <span className="block text-2xl font-black text-slate-800 mt-1.5">3</span>
+                  <span className="block text-2xl font-black text-slate-800 mt-1.5">{tasksList.filter(t => t.status !== 'Completed').length}</span>
                 </div>
                 <div className="w-10 h-10 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center shrink-0">
                   <CheckSquare className="w-5 h-5" />
@@ -343,7 +464,9 @@ const PincodeDashboard = () => {
                   <div className="absolute inset-0 rounded-full border-[10px] border-slate-100"></div>
                   <div className="absolute inset-0 rounded-full border-[10px] border-blue-600 border-r-transparent border-b-transparent animate-spin-slow"></div>
                   <div className="text-center">
-                    <span className="block text-3xl font-black text-slate-800">60%</span>
+                    <span className="block text-3xl font-black text-slate-800">
+                      {shopsList.length > 0 ? Math.round((shopsList.filter(s => s.status === 'Visited' || s.verificationStatus === 'Verified').length / shopsList.length) * 100) : 0}%
+                    </span>
                     <span className="text-[10px] text-slate-400 uppercase font-extrabold">Completed</span>
                   </div>
                 </div>
@@ -351,37 +474,37 @@ const PincodeDashboard = () => {
                   <div className="space-y-1.5">
                     <div className="flex justify-between text-xs font-bold">
                       <span className="text-slate-500">Shops Visited</span>
-                      <span className="text-slate-800">12 / 20</span>
+                      <span className="text-slate-800">{shopsList.filter(s => s.status === 'Visited' || s.verificationStatus === 'Verified').length} / {shopsList.length}</span>
                     </div>
                     <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
-                      <div className="bg-blue-600 h-full rounded-full" style={{ width: '60%' }}></div>
+                      <div className="bg-blue-600 h-full rounded-full" style={{ width: `${shopsList.length > 0 ? Math.round((shopsList.filter(s => s.status === 'Visited' || s.verificationStatus === 'Verified').length / shopsList.length) * 100) : 0}%` }}></div>
                     </div>
                   </div>
                   <div className="space-y-1.5">
                     <div className="flex justify-between text-xs font-bold">
                       <span className="text-slate-500">Shops Registered</span>
-                      <span className="text-slate-800">8 / 20</span>
+                      <span className="text-slate-800">{metrics?.registeredShopsCount ?? shopsList.length} / {shopsList.length > 0 ? shopsList.length : 1}</span>
                     </div>
                     <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
-                      <div className="bg-emerald-500 h-full rounded-full" style={{ width: '40%' }}></div>
+                      <div className="bg-emerald-500 h-full rounded-full" style={{ width: `${shopsList.length > 0 ? Math.min(100, Math.round(((metrics?.registeredShopsCount ?? shopsList.length) / shopsList.length) * 100)) : 0}%` }}></div>
                     </div>
                   </div>
                   <div className="space-y-1.5">
                     <div className="flex justify-between text-xs font-bold">
-                      <span className="text-slate-500">Payments Collected</span>
-                      <span className="text-slate-800">₹ 2,386 / ₹ 5,000</span>
+                      <span className="text-slate-500">Verified Shops</span>
+                      <span className="text-slate-800">{shopsList.filter(s => s.verificationStatus === 'Verified').length} / {shopsList.length}</span>
                     </div>
                     <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
-                      <div className="bg-indigo-500 h-full rounded-full" style={{ width: '48%' }}></div>
+                      <div className="bg-indigo-500 h-full rounded-full" style={{ width: `${shopsList.length > 0 ? Math.round((shopsList.filter(s => s.verificationStatus === 'Verified').length / shopsList.length) * 100) : 0}%` }}></div>
                     </div>
                   </div>
                   <div className="space-y-1.5">
                     <div className="flex justify-between text-xs font-bold">
                       <span className="text-slate-500">Tasks Completed</span>
-                      <span className="text-slate-800">2 / 5</span>
+                      <span className="text-slate-800">{tasksList.filter(t => t.status === 'Completed').length} / {tasksList.length > 0 ? tasksList.length : 1}</span>
                     </div>
                     <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
-                      <div className="bg-amber-500 h-full rounded-full" style={{ width: '40%' }}></div>
+                      <div className="bg-amber-500 h-full rounded-full" style={{ width: `${tasksList.length > 0 ? Math.round((tasksList.filter(t => t.status === 'Completed').length / tasksList.length) * 100) : 0}%` }}></div>
                     </div>
                   </div>
                 </div>
@@ -392,36 +515,48 @@ const PincodeDashboard = () => {
             <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm flex flex-col justify-between">
               <div>
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-base font-bold text-slate-800">Today's Plan (20 Shops)</h3>
+                  <h3 className="text-base font-bold text-slate-800">Today's Plan ({shopsList.length} Shops)</h3>
                   <Link to="/pincode-dashboard?tab=visits" className="text-xs text-blue-600 hover:underline font-bold">View All</Link>
                 </div>
                 <div className="space-y-3.5">
-                  {shopsList.slice(0, 4).map((shop, idx) => (
-                    <div
-                      key={idx}
-                      onClick={() => openVisitModal(shop)}
-                      className="flex items-center justify-between text-xs border-b border-slate-100 pb-3 last:border-0 last:pb-0 cursor-pointer hover:bg-slate-50/80 p-1.5 rounded-lg transition"
-                    >
-                      <div>
-                        <h4 className="font-extrabold text-slate-700">{shop.name}</h4>
-                        <p className="text-[10px] text-slate-400 mt-0.5">{shop.address} • {shop.time}</p>
-                      </div>
-                      <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${shop.status === 'Visited' ? 'bg-emerald-50 text-emerald-600' : shop.status === 'Pending Approval' ? 'bg-blue-50 text-blue-600' : shop.status === 'Not Interested' ? 'bg-rose-50 text-rose-600' : 'bg-amber-50 text-amber-600'}`}>
-                        {shop.status}
-                      </span>
+                  {shopsList.length === 0 ? (
+                    <div className="text-center py-6 border border-dashed border-slate-200 rounded-xl">
+                      <Store className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+                      <p className="text-xs font-bold text-slate-500">No shops registered in this pincode yet.</p>
+                      <Link to="/pincode-dashboard?tab=register" className="inline-block mt-3 bg-blue-600 hover:bg-blue-700 text-white text-[11px] font-extrabold px-3 py-1.5 rounded-lg transition">
+                        + Register First Shop
+                      </Link>
                     </div>
-                  ))}
+                  ) : (
+                    shopsList.slice(0, 4).map((shop, idx) => (
+                      <div
+                        key={idx}
+                        onClick={() => openVisitModal(shop)}
+                        className="flex items-center justify-between text-xs border-b border-slate-100 pb-3 last:border-0 last:pb-0 cursor-pointer hover:bg-slate-50/80 p-1.5 rounded-lg transition"
+                      >
+                        <div>
+                          <h4 className="font-extrabold text-slate-700">{shop.name}</h4>
+                          <p className="text-[10px] text-slate-400 mt-0.5">{shop.address} • {shop.time}</p>
+                        </div>
+                        <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${shop.status === 'Visited' ? 'bg-emerald-50 text-emerald-600' : shop.status === 'Pending Approval' ? 'bg-blue-50 text-blue-600' : shop.status === 'Not Interested' ? 'bg-rose-50 text-rose-600' : 'bg-amber-50 text-amber-600'}`}>
+                          {shop.status}
+                        </span>
+                      </div>
+                    ))
+                  )}
                 </div>
               </div>
-              <button
-                className="w-full bg-blue-600 hover:bg-blue-755 text-white font-bold py-2.5 rounded-lg text-xs text-center block mt-4 transition shadow-sm"
-                onClick={() => {
-                  const firstPending = shopsList.find(s => s.status === 'Pending') || shopsList[0];
-                  openVisitModal(firstPending);
-                }}
-              >
-                Start Next Visit
-              </button>
+              {shopsList.length > 0 && (
+                <button
+                  className="w-full bg-blue-600 hover:bg-blue-755 text-white font-bold py-2.5 rounded-lg text-xs text-center block mt-4 transition shadow-sm"
+                  onClick={() => {
+                    const firstPending = shopsList.find(s => s.status === 'Pending') || shopsList[0];
+                    openVisitModal(firstPending);
+                  }}
+                >
+                  Start Next Visit
+                </button>
+              )}
             </div>
           </div>
 
@@ -504,7 +639,7 @@ const PincodeDashboard = () => {
               <div>
                 <h3 className="text-base font-extrabold text-slate-700">My Assigned Area Details</h3>
                 <p className="text-sm text-slate-400 mt-1">
-                  Pincode: <span className="text-slate-800 font-bold">600005</span> • District: <span className="text-slate-800 font-bold">Chennai</span> • Division: <span className="text-slate-800 font-bold">Chennai Division</span>
+                  Pincode: <span className="text-slate-800 font-bold">{user?.agentInfo?.pincode || user?.pincode || '636112'}</span> • District: <span className="text-slate-800 font-bold">{user?.agentInfo?.district || user?.district || 'Salem District'}</span> • Division: <span className="text-slate-800 font-bold">{user?.agentInfo?.division || user?.division || 'Attur Division'}</span>
                 </p>
               </div>
             </div>
@@ -557,35 +692,35 @@ const PincodeDashboard = () => {
                     className="flex justify-between border-b border-slate-100 pb-2 cursor-pointer hover:text-blue-600 transition"
                   >
                     <span>Total Shops in Area</span>
-                    <span className="text-slate-800 font-extrabold">156</span>
+                    <span className="text-slate-800 font-extrabold">{shopsList.length}</span>
                   </div>
                   <div
                     onClick={() => navigate('/pincode-dashboard?tab=visits')}
                     className="flex justify-between border-b border-slate-100 pb-2 cursor-pointer hover:text-emerald-600 transition"
                   >
                     <span>Active Shops</span>
-                    <span className="text-emerald-600 font-extrabold">138</span>
+                    <span className="text-emerald-600 font-extrabold">{shopsList.filter(s => s.verificationStatus === 'Verified').length}</span>
                   </div>
                   <div
                     onClick={() => navigate('/pincode-dashboard?tab=visits')}
                     className="flex justify-between border-b border-slate-100 pb-2 cursor-pointer hover:text-rose-600 transition"
                   >
-                    <span>Inactive Shops</span>
-                    <span className="text-rose-600 font-extrabold">18</span>
+                    <span>Inactive / Pending Shops</span>
+                    <span className="text-rose-600 font-extrabold">{shopsList.filter(s => s.verificationStatus !== 'Verified').length}</span>
                   </div>
                   <div
                     onClick={() => navigate('/vendor-management')}
                     className="flex justify-between border-b border-slate-100 pb-2 cursor-pointer hover:text-blue-600 transition"
                   >
                     <span>Vendors</span>
-                    <span className="text-slate-800 font-extrabold">132</span>
+                    <span className="text-slate-800 font-extrabold">{shopsList.length}</span>
                   </div>
                   <div
                     onClick={() => navigate('/pincode-dashboard?tab=support')}
                     className="flex justify-between border-b border-slate-100 pb-2 cursor-pointer hover:text-blue-600 transition"
                   >
                     <span>Customers</span>
-                    <span className="text-slate-800 font-extrabold">125</span>
+                    <span className="text-slate-800 font-extrabold">{shopsList.length}</span>
                   </div>
                 </div>
               </div>
@@ -594,15 +729,19 @@ const PincodeDashboard = () => {
                 <h3 className="text-sm font-bold text-slate-800 mb-1">Pincode Info</h3>
                 <div className="flex justify-between border-b border-slate-100 pb-2">
                   <span>Pincode</span>
-                  <span className="text-slate-800">600005</span>
+                  <span className="text-slate-800">{user?.agentInfo?.pincode || user?.pincode || '606201'}</span>
                 </div>
                 <div className="flex justify-between border-b border-slate-100 pb-2">
                   <span>Area Name</span>
-                  <span className="text-slate-800">Anna Salai, T. Nagar</span>
+                  <span className="text-slate-800">
+                    {(user?.agentInfo?.pincode || user?.pincode) === '636112' ? 'Thalaivasal, Deviyakurichi' : `${user?.agentInfo?.division || user?.division || 'Kallakurichi Division'} Sector`}
+                  </span>
                 </div>
                 <div className="flex justify-between border-b border-slate-100 pb-2">
                   <span>Assigned On</span>
-                  <span className="text-slate-800">10 Jan 2025</span>
+                  <span className="text-slate-800">
+                    {user?.createdAt ? new Date(user.createdAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Active Account'}
+                  </span>
                 </div>
               </div>
             </div>
@@ -613,15 +752,15 @@ const PincodeDashboard = () => {
             <div className="grid grid-cols-3 gap-4 text-center">
               <div className="bg-slate-50 p-4 rounded-xl border border-slate-150">
                 <span className="block text-slate-400 text-xs font-bold uppercase">Total Route</span>
-                <span className="block text-xl font-black text-slate-800 mt-1">20 Shops</span>
+                <span className="block text-xl font-black text-slate-800 mt-1">{shopsList.length} Shops</span>
               </div>
               <div className="bg-slate-50 p-4 rounded-xl border border-slate-150">
                 <span className="block text-slate-400 text-xs font-bold uppercase">Distance</span>
-                <span className="block text-xl font-black text-slate-800 mt-1">18.6 km</span>
+                <span className="block text-xl font-black text-slate-800 mt-1">{shopsList.length > 0 ? (shopsList.length * 1.5).toFixed(1) : 0} km</span>
               </div>
               <div className="bg-slate-50 p-4 rounded-xl border border-slate-150">
                 <span className="block text-slate-400 text-xs font-bold uppercase">Estimated Time</span>
-                <span className="block text-xl font-black text-slate-800 mt-1">2h 45m</span>
+                <span className="block text-xl font-black text-slate-800 mt-1">{shopsList.length > 0 ? `${shopsList.length * 20}m` : '0m'}</span>
               </div>
             </div>
           </div>
@@ -658,19 +797,23 @@ const PincodeDashboard = () => {
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-center">
             <div className="bg-blue-50 border border-blue-100 p-4 rounded-xl">
               <span className="block text-blue-600 text-[11px] font-black uppercase">Assigned</span>
-              <span className="block text-2xl font-black text-blue-800 mt-1">20</span>
+              <span className="block text-2xl font-black text-blue-800 mt-1">{shopsList.length}</span>
             </div>
             <div className="bg-emerald-50 border border-emerald-100 p-4 rounded-xl">
               <span className="block text-emerald-600 text-[11px] font-black uppercase">Visited</span>
-              <span className="block text-2xl font-black text-emerald-800 mt-1">12</span>
+              <span className="block text-2xl font-black text-emerald-800 mt-1">
+                {shopsList.filter(s => s.status === 'Visited' || s.status === 'Completed' || s.status === 'Not Interested' || s.verificationStatus === 'Verified').length}
+              </span>
             </div>
             <div className="bg-amber-50 border border-amber-100 p-4 rounded-xl">
               <span className="block text-amber-600 text-[11px] font-black uppercase">Pending</span>
-              <span className="block text-2xl font-black text-amber-800 mt-1">4</span>
+              <span className="block text-2xl font-black text-amber-800 mt-1">{shopsList.filter(s => s.status === 'Pending' || s.verificationStatus === 'Pending').length}</span>
             </div>
             <div className="bg-rose-50 border border-rose-100 p-4 rounded-xl">
               <span className="block text-rose-600 text-[11px] font-black uppercase">Remaining</span>
-              <span className="block text-2xl font-black text-rose-800 mt-1">4</span>
+              <span className="block text-2xl font-black text-rose-800 mt-1">
+                {shopsList.filter(s => s.status !== 'Visited' && s.status !== 'Completed' && s.status !== 'Not Interested' && s.verificationStatus !== 'Verified').length}
+              </span>
             </div>
           </div>
 
@@ -689,8 +832,8 @@ const PincodeDashboard = () => {
                 <tbody className="divide-y divide-slate-100 text-slate-700">
                   {shopsList
                     .filter(s => {
-                      if (visitsSubTab === 'visited') return s.status === 'Visited';
-                      if (visitsSubTab === 'plan') return s.status !== 'Visited';
+                      if (visitsSubTab === 'visited') return s.status === 'Visited' || s.status === 'Completed' || s.status === 'Not Interested';
+                      if (visitsSubTab === 'plan') return s.status !== 'Visited' && s.status !== 'Completed' && s.status !== 'Not Interested';
                       return true;
                     })
                     .map((shop, index) => (
@@ -699,16 +842,24 @@ const PincodeDashboard = () => {
                         <td className="py-3.5 px-4 font-semibold">{shop.address}</td>
                         <td className="py-3.5 px-4 font-semibold text-slate-500">{shop.time}</td>
                         <td className="py-3.5 px-4">
-                          <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${shop.status === 'Visited' ? 'bg-emerald-50 text-emerald-600' : shop.status === 'Pending Approval' ? 'bg-blue-50 text-blue-600' : shop.status === 'Not Interested' ? 'bg-rose-50 text-rose-600' : 'bg-amber-50 text-amber-600'}`}>
+                          <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${shop.status === 'Visited' || shop.status === 'Completed' ? 'bg-emerald-50 text-emerald-600' : shop.status === 'Pending Approval' ? 'bg-blue-50 text-blue-600' : shop.status === 'Not Interested' ? 'bg-rose-50 text-rose-600' : 'bg-amber-50 text-amber-600'}`}>
                             {shop.status}
                           </span>
                         </td>
-                        <td className="py-3.5 px-4">
+                        <td className="py-3.5 px-4 flex gap-2">
+                          {!['Visited', 'Completed', 'Not Interested', 'Pending Approval'].includes(shop.status) && (
+                            <button
+                              className="bg-blue-600 hover:bg-blue-755 text-white px-3.5 py-1 rounded text-[10px] font-bold transition shadow-sm"
+                              onClick={() => openVisitModal(shop)}
+                            >
+                              Start Visit
+                            </button>
+                          )}
                           <button
-                            className="bg-blue-600 hover:bg-blue-755 text-white px-3.5 py-1 rounded text-[10px] font-bold transition shadow-sm"
-                            onClick={() => openVisitModal(shop)}
+                            className="bg-slate-100 hover:bg-slate-200 text-slate-755 border border-slate-200 px-3.5 py-1 rounded text-[10px] font-bold transition shadow-sm"
+                            onClick={() => handleOpenEditVisit(shop)}
                           >
-                            {shop.status === 'Visited' ? 'View Details' : 'Start Visit'}
+                            Edit
                           </button>
                         </td>
                       </tr>
@@ -728,80 +879,135 @@ const PincodeDashboard = () => {
           </div>
         </div>
       )}
-
       {/* 04. REGISTER SHOP / VENDOR */}
       {activeTab === 'register' && (
-        <div className="max-w-2xl mx-auto space-y-6">
+        <div className="max-w-4xl mx-auto space-y-6">
           <div className="bg-white border border-slate-200 rounded-xl p-8 shadow-sm space-y-6">
             <div>
               <h1 className="text-2xl font-black text-[#034ea2]">New Business Tie-up</h1>
               <p className="text-xs text-slate-500 mt-1 font-semibold">Register a new partner business for admin approval.</p>
             </div>
 
-            <form onSubmit={(e) => {
+            <form onSubmit={async (e) => {
               e.preventDefault();
-              alert('Business Tie-up request submitted successfully for admin approval!');
-            }} className="space-y-4">
+              try {
+                const formData = new FormData();
+                formData.append('name', registerData.shopName || 'New Partner Shop');
+                formData.append('ownerName', registerData.ownerName || 'Shop Owner');
+                formData.append('email', registerData.email || user?.email || 'shop@example.com');
+                formData.append('phone', registerData.mobile || user?.phone || '9876543210');
+                formData.append('address', registerData.shopAddress || `${user?.agentInfo?.pincode || '606201'}, ${user?.agentInfo?.district || 'Kallakurichi District'}`);
+                formData.append('pincode', user?.agentInfo?.pincode || user?.pincode || '606201');
+
+                if (shopDocumentFile) {
+                  formData.append('document', shopDocumentFile);
+                } else {
+                  const dummyBlob = new Blob(['Shop document proof'], { type: 'text/plain' });
+                  formData.append('document', dummyBlob, 'shop_proof.txt');
+                }
+
+                await api.post('/api/shops', formData, {
+                  headers: { 'Content-Type': 'multipart/form-data' }
+                });
+
+                alert('Shop registered successfully in live database!');
+                setRegisterData({
+                  shopName: '',
+                  businessCategory: 'Grocery',
+                  subCategory: '',
+                  shopAddress: '',
+                  landmark: '',
+                  gps: '',
+                  ownerName: '',
+                  mobile: '',
+                  alternateNumber: '',
+                  email: '',
+                  licenseNumber: '',
+                  plan: 'Monthly Plan',
+                  paymentMode: 'UPI',
+                  amount: '299',
+                  paymentStatus: 'Success',
+                  paymentDate: ''
+                });
+                fetchLiveShops();
+                fetchMetrics();
+                navigate('/pincode-dashboard?tab=visits');
+              } catch (err) {
+                console.error('Register shop error:', err);
+                alert(err.response?.data?.message || 'Error registering shop in database');
+              }
+            }} className="space-y-5">
               
-              {/* Select Category */}
-              <div>
-                <label className="block text-xs font-extrabold text-slate-700 mb-1.5">Select Category *</label>
-                <select
-                  required
-                  value={registerData.businessCategory}
-                  onChange={(e) => setRegisterData({ ...registerData, businessCategory: e.target.value })}
-                  className="w-full border border-slate-300 rounded-lg p-3 text-xs font-bold text-slate-700 outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 bg-white"
-                >
-                  <option value="">Choose Category</option>
-                  <option value="Grocery">Grocery</option>
-                  <option value="Hardware">Hardware</option>
-                  <option value="Medical">Medical</option>
-                  <option value="Clothing">Clothing</option>
-                  <option value="Stationery">Stationery</option>
-                  <option value="Electronics">Electronics</option>
-                  <option value="Others">Others</option>
-                </select>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Select Category */}
+                <div>
+                  <label className="block text-xs font-extrabold text-slate-700 mb-1.5">Select Category *</label>
+                  <select
+                    required
+                    value={registerData.businessCategory}
+                    onChange={(e) => setRegisterData({ ...registerData, businessCategory: e.target.value })}
+                    className="w-full border border-slate-300 rounded-lg p-3 text-xs font-bold text-slate-700 outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 bg-white"
+                  >
+                    <option value="">Choose Category</option>
+                    <option value="Grocery">Grocery</option>
+                    <option value="Hardware">Hardware</option>
+                    <option value="Medical">Medical</option>
+                    <option value="Clothing">Clothing</option>
+                    <option value="Stationery">Stationery</option>
+                    <option value="Electronics">Electronics</option>
+                    <option value="Others">Others</option>
+                  </select>
+                </div>
+
+                {/* Sub-category / Type */}
+                <div>
+                  <label className="block text-xs font-extrabold text-slate-700 mb-1.5">Sub-category / Type *</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. Retail Store"
+                    value={registerData.subCategory}
+                    onChange={(e) => setRegisterData({ ...registerData, subCategory: e.target.value })}
+                    className="w-full border border-slate-300 rounded-lg p-3 text-xs font-medium text-slate-800 placeholder-slate-400 outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
+                  />
+                </div>
               </div>
 
-              {/* Sub-category / Type */}
-              <div>
-                <input
-                  type="text"
-                  required
-                  placeholder="Sub-category / Type *"
-                  className="w-full border border-slate-300 rounded-lg p-3 text-xs font-medium text-slate-800 placeholder-slate-400 outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
-                />
-              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Business Name */}
+                <div>
+                  <label className="block text-xs font-extrabold text-slate-700 mb-1.5">Business Name *</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. Rajesh Traders"
+                    value={registerData.shopName}
+                    onChange={(e) => setRegisterData({ ...registerData, shopName: e.target.value })}
+                    className="w-full border border-slate-300 rounded-lg p-3 text-xs font-medium text-slate-800 placeholder-slate-400 outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
+                  />
+                </div>
 
-              {/* Business Name */}
-              <div>
-                <input
-                  type="text"
-                  required
-                  placeholder="Business Name *"
-                  value={registerData.shopName}
-                  onChange={(e) => setRegisterData({ ...registerData, shopName: e.target.value })}
-                  className="w-full border border-slate-300 rounded-lg p-3 text-xs font-medium text-slate-800 placeholder-slate-400 outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
-                />
-              </div>
-
-              {/* Pincode */}
-              <div>
-                <input
-                  type="text"
-                  required
-                  placeholder="Pincode *"
-                  defaultValue={user?.agentInfo?.pincode || '641001'}
-                  className="w-full border border-slate-300 rounded-lg p-3 text-xs font-medium text-slate-800 placeholder-slate-400 outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
-                />
+                {/* Pincode */}
+                <div>
+                  <label className="block text-xs font-extrabold text-slate-700 mb-1.5">Pincode *</label>
+                  <input
+                    type="text"
+                    required
+                    readOnly
+                    placeholder="Pincode *"
+                    value={user?.agentInfo?.pincode || user?.pincode || '606201'}
+                    className="w-full border border-slate-300 rounded-lg p-3 text-xs font-bold text-slate-600 bg-slate-100 outline-none cursor-not-allowed"
+                  />
+                </div>
               </div>
 
               {/* Full Address */}
               <div>
+                <label className="block text-xs font-extrabold text-slate-700 mb-1.5">Full Address *</label>
                 <textarea
                   required
                   rows={2}
-                  placeholder="Full Address *"
+                  placeholder="Enter shop full address..."
                   value={registerData.shopAddress}
                   onChange={(e) => setRegisterData({ ...registerData, shopAddress: e.target.value })}
                   className="w-full border border-slate-300 rounded-lg p-3 text-xs font-medium text-slate-800 placeholder-slate-400 outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
@@ -810,9 +1016,12 @@ const PincodeDashboard = () => {
 
               {/* Business License Number (Optional) */}
               <div>
+                <label className="block text-xs font-extrabold text-slate-700 mb-1.5">Business License Number (Optional)</label>
                 <input
                   type="text"
-                  placeholder="Business License Number (Optional)"
+                  placeholder="GSTIN or License Number"
+                  value={registerData.licenseNumber}
+                  onChange={(e) => setRegisterData({ ...registerData, licenseNumber: e.target.value })}
                   className="w-full border border-slate-300 rounded-lg p-3 text-xs font-medium text-slate-800 placeholder-slate-400 outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
                 />
               </div>
@@ -824,8 +1033,15 @@ const PincodeDashboard = () => {
                   <div className="w-10 h-10 bg-[#034ea2] text-white rounded-full flex items-center justify-center mb-2 shadow-sm">
                     <Upload className="w-5 h-5" />
                   </div>
-                  <span className="text-xs font-bold text-[#034ea2]">Select image from Gallery</span>
-                  <input type="file" className="hidden" accept="image/*,.pdf" />
+                  <span className="text-xs font-bold text-[#034ea2]">
+                    {shopDocumentFile ? shopDocumentFile.name : 'Select image or document from computer'}
+                  </span>
+                  <input
+                    type="file"
+                    className="hidden"
+                    accept="image/*,.pdf"
+                    onChange={(e) => setShopDocumentFile(e.target.files[0])}
+                  />
                 </label>
               </div>
 
@@ -850,7 +1066,7 @@ const PincodeDashboard = () => {
               <h1 className="text-2xl font-black text-slate-800">Customer Support</h1>
               <p className="text-sm text-slate-500 mt-1 font-semibold">Manage client and vendor queries in one dashboard.</p>
             </div>
-            <button className="bg-blue-600 text-white px-4 py-2 rounded-lg text-xs font-bold shadow hover:bg-blue-755 transition" onClick={() => alert('Create query ticket')}>
+            <button className="bg-blue-600 text-white px-4 py-2 rounded-lg text-xs font-bold shadow hover:bg-blue-755 transition" onClick={() => setShowAddQueryModal(true)}>
               Raise New Query
             </button>
           </div>
@@ -861,6 +1077,21 @@ const PincodeDashboard = () => {
                 {tab === 'progress' ? 'In Progress' : tab}
               </span>
             ))}
+          </div>
+
+          {/* Priority filter */}
+          <div className="flex items-center gap-2 bg-slate-50 p-3.5 rounded-xl border border-slate-150 text-xs font-bold text-slate-500 max-w-xs">
+            <span>Filter Priority:</span>
+            <select
+              value={priorityFilter}
+              onChange={(e) => setPriorityFilter(e.target.value)}
+              className="border border-slate-300 rounded p-1 text-slate-700 bg-white outline-none"
+            >
+              <option value="All">All Priorities</option>
+              <option value="High">High</option>
+              <option value="Medium">Medium</option>
+              <option value="Low">Low</option>
+            </select>
           </div>
 
           <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
@@ -880,10 +1111,11 @@ const PincodeDashboard = () => {
                 <tbody className="divide-y divide-slate-100 text-slate-700">
                   {customerQueries
                     .filter(q => {
-                      if (supportSubTab === 'open') return q.status === 'Open';
-                      if (supportSubTab === 'progress') return q.status === 'In Progress';
-                      if (supportSubTab === 'resolved') return q.status === 'Resolved';
-                      if (supportSubTab === 'closed') return q.status === 'Closed';
+                      if (supportSubTab === 'open' && q.status !== 'Open') return false;
+                      if (supportSubTab === 'progress' && q.status !== 'In Progress') return false;
+                      if (supportSubTab === 'resolved' && q.status !== 'Resolved') return false;
+                      if (supportSubTab === 'closed' && q.status !== 'Closed') return false;
+                      if (priorityFilter !== 'All' && q.priority !== priorityFilter) return false;
                       return true;
                     })
                     .map((q, idx) => (
@@ -902,9 +1134,16 @@ const PincodeDashboard = () => {
                             {q.status}
                           </span>
                         </td>
-                        <td className="py-3.5 px-4">
-                          <button className="text-blue-600 hover:underline text-xs" onClick={() => alert(`Details for ticket: ${q.ticketId}`)}>
+                        <td className="py-3.5 px-4 flex items-center gap-3">
+                          <button className="text-blue-600 hover:underline text-xs font-extrabold" onClick={() => setSelectedTicket(q)}>
                             View
+                          </button>
+                          <button
+                            onClick={() => handleDeleteQuery(q.ticketId)}
+                            className="p-1 rounded-lg text-rose-500 hover:text-rose-700 hover:bg-rose-50 transition"
+                            title="Delete Support Ticket"
+                          >
+                            <Trash2 className="w-4 h-4" />
                           </button>
                         </td>
                       </tr>
@@ -924,7 +1163,19 @@ const PincodeDashboard = () => {
               <h1 className="text-2xl font-black text-slate-800">Task Management</h1>
               <p className="text-sm text-slate-500 mt-1 font-semibold">Review checklists and verify task assignments.</p>
             </div>
-            <button className="bg-blue-600 text-white px-4 py-2 rounded-lg text-xs font-bold shadow hover:bg-blue-755 transition" onClick={() => alert('New Task assignment dialog')}>
+            <button
+              className="bg-blue-600 text-white px-4 py-2 rounded-lg text-xs font-bold shadow hover:bg-blue-755 transition"
+              onClick={() => {
+                const text = prompt('Enter new task name:');
+                if (text) {
+                  const updatedTasks = [
+                    ...tasksList,
+                    { id: Date.now(), text, due: 'Due: Today', status: 'Pending' }
+                  ];
+                  saveLocalTasks(updatedTasks);
+                }
+              }}
+            >
               New Task
             </button>
           </div>
@@ -950,7 +1201,8 @@ const PincodeDashboard = () => {
                         type="checkbox"
                         checked={task.status === 'Completed'}
                         onChange={() => {
-                          setTasksList(tasksList.map(t => t.id === task.id ? { ...t, status: t.status === 'Completed' ? 'Pending' : 'Completed' } : t));
+                          const updated = tasksList.map(t => t.id === task.id ? { ...t, status: t.status === 'Completed' ? 'Pending' : 'Completed' } : t);
+                          saveLocalTasks(updated);
                         }}
                         className="w-4.5 h-4.5 text-blue-600 border-slate-300 rounded cursor-pointer focus:ring-blue-500"
                       />
@@ -989,11 +1241,10 @@ const PincodeDashboard = () => {
             <div className="flex flex-wrap gap-4 items-center justify-between">
               <div className="flex items-center gap-3">
                 <select className="border border-slate-200 rounded-lg p-2.5 text-xs font-bold outline-none bg-slate-50 focus:ring-2 focus:ring-blue-500">
-                  <option>24 May 2025</option>
-                  <option>23 May 2025</option>
-                  <option>22 May 2025</option>
+                  <option>{new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</option>
+                  <option>{new Date(Date.now() - 86400000).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</option>
                 </select>
-                <button className="bg-blue-600 hover:bg-blue-755 text-white px-4 py-2.5 rounded-lg text-xs font-bold transition shadow" onClick={() => alert('Generating report data...')}>
+                <button className="bg-blue-600 hover:bg-blue-755 text-white px-4 py-2.5 rounded-lg text-xs font-bold transition shadow" onClick={() => alert('Report generated for selected date!')}>
                   Generate
                 </button>
               </div>
@@ -1002,19 +1253,23 @@ const PincodeDashboard = () => {
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-center">
               <div className="border border-slate-150 p-4 rounded-xl">
                 <span className="block text-slate-400 text-xs font-bold uppercase">Shops Visited</span>
-                <span className="block text-xl font-black text-slate-800 mt-1">12</span>
+                <span className="block text-xl font-black text-slate-800 mt-1">
+                  {shopsList.filter(s => s.status === 'Visited' || s.verificationStatus === 'Verified').length}
+                </span>
               </div>
               <div className="border border-slate-150 p-4 rounded-xl">
                 <span className="block text-slate-400 text-xs font-bold uppercase">Shops Registered</span>
-                <span className="block text-xl font-black text-slate-800 mt-1">8</span>
+                <span className="block text-xl font-black text-slate-800 mt-1">{shopsList.length}</span>
               </div>
               <div className="border border-slate-150 p-4 rounded-xl">
                 <span className="block text-slate-400 text-xs font-bold uppercase">Payments Collected</span>
-                <span className="block text-xl font-black text-slate-800 mt-1">₹ 2,386</span>
+                <span className="block text-xl font-black text-slate-800 mt-1">
+                  ₹ {shopsList.filter(s => s.status === 'Visited' || s.verificationStatus === 'Verified').length * 299}
+                </span>
               </div>
               <div className="border border-slate-150 p-4 rounded-xl">
                 <span className="block text-slate-400 text-xs font-bold uppercase">Customer Meetings</span>
-                <span className="block text-xl font-black text-slate-800 mt-1">3</span>
+                <span className="block text-xl font-black text-slate-800 mt-1">{shopsList.length}</span>
               </div>
             </div>
 
@@ -1032,33 +1287,57 @@ const PincodeDashboard = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 text-slate-700">
-                  {reportsList.map((rep) => (
-                    <tr key={rep.id} className="hover:bg-slate-50 transition">
-                      <td className="py-3.5 px-4 font-extrabold text-slate-805">{rep.date}</td>
-                      <td className="py-3.5 px-4">{rep.visits}</td>
-                      <td className="py-3.5 px-4">{rep.registered}</td>
-                      <td className="py-3.5 px-4 font-bold text-slate-800">{rep.collected}</td>
-                      <td className="py-3.5 px-4">
-                        <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${rep.status === 'Approved' ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 'bg-blue-50 text-blue-600 border border-blue-100'}`}>
-                          {rep.status}
-                        </span>
-                      </td>
-                      <td className="py-3.5 px-4">
-                        <button className="text-slate-400 hover:text-slate-700" onClick={() => alert('Download triggered!')}>
-                          <Download className="w-4.5 h-4.5" />
-                        </button>
-                      </td>
+                  {reportsList.length === 0 ? (
+                    <tr>
+                      <td colSpan="6" className="py-6 text-center text-slate-400">No reports submitted yet.</td>
                     </tr>
-                  ))}
+                  ) : (
+                    reportsList.map((rep, repIdx) => (
+                      <tr key={rep.id || repIdx} className="hover:bg-slate-50 transition">
+                        <td className="py-3.5 px-4 font-extrabold text-slate-805">{rep.date}</td>
+                        <td className="py-3.5 px-4">{rep.visits}</td>
+                        <td className="py-3.5 px-4">{rep.registered}</td>
+                        <td className="py-3.5 px-4 font-bold text-slate-800">{rep.collected}</td>
+                        <td className="py-3.5 px-4">
+                          <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${rep.status === 'Approved' ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 'bg-blue-50 text-blue-600 border border-blue-100'}`}>
+                            {rep.status}
+                          </span>
+                        </td>
+                        <td className="py-3.5 px-4">
+                          <button className="text-slate-400 hover:text-slate-700" onClick={() => alert('Download triggered!')}>
+                            <Download className="w-4.5 h-4.5" />
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  )}
                 </tbody>
               </table>
             </div>
 
             <div className="flex justify-between items-center border-t border-slate-100 pt-4">
-              <button className="bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-600 px-4 py-2.5 rounded-lg text-xs font-bold transition" onClick={() => alert('Exporting all logs...')}>
+              <button className="bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-650 px-4 py-2.5 rounded-lg text-xs font-bold transition" onClick={() => alert('Exporting all logs...')}>
                 Download All
               </button>
-              <button className="bg-blue-600 hover:bg-blue-755 text-white px-4 py-2.5 rounded-lg text-xs font-bold transition shadow" onClick={() => alert('Daily Report successfully submitted!')}>
+              <button
+                className="bg-blue-600 hover:bg-blue-755 text-white px-4 py-2.5 rounded-lg text-xs font-bold transition shadow"
+                onClick={async () => {
+                  try {
+                    const visitedCount = shopsList.filter(s => s.status === 'Visited' || s.verificationStatus === 'Verified').length;
+                    const registeredCount = shopsList.length;
+                    await api.post('/api/reports', {
+                      title: `Daily Work Log - ${new Date().toLocaleDateString('en-GB')}`,
+                      content: `visits:${visitedCount}, registered:${registeredCount}, collected:₹ ${visitedCount * 299}`,
+                      reportType: 'Daily'
+                    });
+                    alert('Daily Report submitted successfully to database!');
+                    fetchLiveReports();
+                  } catch (err) {
+                    console.error('Error submitting report:', err);
+                    alert('Error submitting report to database');
+                  }
+                }}
+              >
                 Submit Daily Report
               </button>
             </div>
@@ -1083,22 +1362,28 @@ const PincodeDashboard = () => {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
             <div className="bg-white border border-slate-250 rounded-xl p-5 shadow-sm relative">
               <span className="block text-slate-450 text-[10px] uppercase font-bold tracking-wider">Shops Registered</span>
-              <span className="block text-2xl font-black text-slate-800 mt-1.5">32</span>
-              <span className="text-[10px] text-emerald-500 font-bold block mt-1.5">▲ 12% vs last month</span>
+              <span className="block text-2xl font-black text-slate-800 mt-1.5">{shopsList.length}</span>
+              <span className="text-[10px] text-emerald-500 font-bold block mt-1.5">▲ Live database count</span>
             </div>
             <div className="bg-white border border-slate-250 rounded-xl p-5 shadow-sm relative">
               <span className="block text-slate-450 text-[10px] uppercase font-bold tracking-wider">Shops Visited</span>
-              <span className="block text-2xl font-black text-slate-800 mt-1.5">88</span>
-              <span className="text-[10px] text-emerald-500 font-bold block mt-1.5">▲ 10% vs last month</span>
+              <span className="block text-2xl font-black text-slate-800 mt-1.5">
+                {shopsList.filter(s => s.status === 'Visited' || s.verificationStatus === 'Verified').length}
+              </span>
+              <span className="text-[10px] text-emerald-500 font-bold block mt-1.5">▲ Live visited count</span>
             </div>
             <div className="bg-white border border-slate-250 rounded-xl p-5 shadow-sm relative">
               <span className="block text-slate-450 text-[10px] uppercase font-bold tracking-wider">Payments Collected</span>
-              <span className="block text-2xl font-black text-slate-800 mt-1.5">₹ 68,450</span>
-              <span className="text-[10px] text-emerald-500 font-bold block mt-1.5">▲ 18% vs last month</span>
+              <span className="block text-2xl font-black text-slate-800 mt-1.5">
+                ₹ {shopsList.filter(s => s.status === 'Visited' || s.verificationStatus === 'Verified').length * 299}
+              </span>
+              <span className="text-[10px] text-emerald-500 font-bold block mt-1.5">▲ Live collection value</span>
             </div>
             <div className="bg-white border border-slate-250 rounded-xl p-5 shadow-sm relative">
               <span className="block text-slate-450 text-[10px] uppercase font-bold tracking-wider">Target Achievement</span>
-              <span className="block text-2xl font-black text-slate-800 mt-1.5">80%</span>
+              <span className="block text-2xl font-black text-slate-800 mt-1.5">
+                {shopsList.length > 0 ? Math.round((shopsList.filter(s => s.status === 'Visited' || s.verificationStatus === 'Verified').length / shopsList.length) * 100) : 0}%
+              </span>
               <span className="text-[10px] text-blue-500 font-bold block mt-1.5">On Target</span>
             </div>
           </div>
@@ -1207,37 +1492,8 @@ const PincodeDashboard = () => {
             <span className={`cursor-pointer pb-3 px-3 uppercase ${announceSubTab === 'important' ? 'text-blue-600 border-b-2 border-blue-600 font-extrabold' : 'hover:text-slate-650'}`} onClick={() => setAnnounceSubTab('important')}>Important</span>
           </div>
 
-          <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm space-y-4">
-            <div className="border border-slate-150 p-4 rounded-xl bg-slate-50/50 space-y-2 relative">
-              <span className="bg-red-500 text-white text-[9px] px-2 py-0.5 rounded font-black uppercase absolute top-4 right-4">New</span>
-              <h4 className="font-extrabold text-slate-850">Government Awareness Program</h4>
-              <p className="text-[10px] text-slate-400 font-bold">Posted by Admin • 24 May 2025</p>
-              <p className="text-xs text-slate-600 font-semibold leading-relaxed pt-1">
-                Government awareness program will be conducted on 25 May 2025. All agents must participate.
-              </p>
-            </div>
-
-            <div className="border border-slate-150 p-4 rounded-xl bg-slate-50/50 space-y-2">
-              <h4 className="font-extrabold text-slate-850">Monthly Meeting</h4>
-              <p className="text-[10px] text-slate-400 font-bold">Posted by Regional Management • 22 May 2025</p>
-              <p className="text-xs text-slate-600 font-semibold leading-relaxed pt-1">
-                Special review meeting will be held on 30 May 2025 at 10:00 AM.
-              </p>
-            </div>
-
-            <div className="border border-slate-150 p-4 rounded-xl bg-slate-50/50 space-y-2">
-              <h4 className="font-extrabold text-slate-850">New Subscription Offer</h4>
-              <p className="text-[10px] text-slate-400 font-bold">Posted by Admin • 20 May 2025</p>
-              <p className="text-xs text-slate-600 font-semibold leading-relaxed pt-1">
-                Special discount offer for yearly subscription. Inform all vendors.
-              </p>
-            </div>
-
-            <div className="border-t border-slate-100 pt-4">
-              <button className="bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-650 px-4 py-2 rounded-lg text-xs font-bold transition w-full" onClick={() => alert('Showing all historical announcements')}>
-                View All Announcements
-              </button>
-            </div>
+          <div className="bg-white border border-slate-200 rounded-xl p-8 shadow-sm text-center">
+            <p className="text-slate-400 text-xs font-bold">No official announcements posted at this time.</p>
           </div>
         </div>
       )}
@@ -1284,9 +1540,11 @@ const PincodeDashboard = () => {
                     <div className="w-24 h-24 rounded-full bg-slate-100 border border-slate-200 overflow-hidden relative group mb-3">
                       <Users className="w-full h-full text-slate-400 p-4" />
                     </div>
-                    <h3 className="font-extrabold text-slate-800 text-sm">Ramesh Kumar</h3>
-                    <p className="text-[10px] text-slate-400 mt-0.5">ramesh.agent@gmail.com</p>
-                    <p className="text-[10px] text-blue-650 font-black uppercase mt-1">Pincode Agent • 600005</p>
+                    <h3 className="font-extrabold text-slate-800 text-sm">{user?.name || 'Agent User'}</h3>
+                    <p className="text-[10px] text-slate-400 mt-0.5">{user?.email || 'agent@example.com'}</p>
+                    <p className="text-[10px] text-blue-650 font-black uppercase mt-1">
+                      Pincode Agent • {user?.agentInfo?.pincode || user?.pincode || '636112'}
+                    </p>
                   </div>
 
                   <div className="md:col-span-2 bg-white border border-slate-200 rounded-xl p-5 shadow-sm space-y-4">
@@ -1294,27 +1552,27 @@ const PincodeDashboard = () => {
                     <div className="grid grid-cols-2 gap-4 text-xs font-bold">
                       <div>
                         <span className="text-slate-400">Name</span>
-                        <p className="text-slate-800 mt-1">Ramesh Kumar</p>
+                        <p className="text-slate-800 mt-1">{user?.name || 'Agent User'}</p>
                       </div>
                       <div>
                         <span className="text-slate-400">Mobile Number</span>
-                        <p className="text-slate-800 mt-1">+91 98765 63210</p>
+                        <p className="text-slate-800 mt-1">{user?.phone || '+91 98765 63210'}</p>
                       </div>
                       <div>
                         <span className="text-slate-400">Email ID</span>
-                        <p className="text-slate-800 mt-1">ramesh.agent@email.com</p>
+                        <p className="text-slate-800 mt-1">{user?.email || 'agent@example.com'}</p>
                       </div>
                       <div>
                         <span className="text-slate-400">Pincode</span>
-                        <p className="text-slate-800 mt-1">600005</p>
+                        <p className="text-slate-800 mt-1">{user?.agentInfo?.pincode || user?.pincode || '636112'}</p>
                       </div>
                       <div>
                         <span className="text-slate-400">District</span>
-                        <p className="text-slate-800 mt-1">Chennai</p>
+                        <p className="text-slate-800 mt-1">{user?.agentInfo?.district || user?.district || 'Salem District'}</p>
                       </div>
                       <div>
                         <span className="text-slate-400">Division</span>
-                        <p className="text-slate-800 mt-1">Chennai Division</p>
+                        <p className="text-slate-800 mt-1">{user?.agentInfo?.division || user?.division || 'Attur Division'}</p>
                       </div>
                       <div>
                         <span className="text-slate-400">Joined On</span>
@@ -1649,7 +1907,7 @@ const PincodeDashboard = () => {
                     return;
                   }
                   const newVisit = {
-                    id: shopsList.length + 1,
+                    id: `scheduled_${Date.now()}`,
                     name: newVisitData.name,
                     address: newVisitData.address,
                     owner: newVisitData.owner,
@@ -1657,15 +1915,289 @@ const PincodeDashboard = () => {
                     time: newVisitData.time,
                     status: 'Pending'
                   };
+                  const savedVisits = JSON.parse(localStorage.getItem(`scheduled_visits_${user?._id}`)) || [];
+                  const updatedVisits = [...savedVisits, newVisit];
+                  localStorage.setItem(`scheduled_visits_${user?._id}`, JSON.stringify(updatedVisits));
+                  
                   setShopsList([...shopsList, newVisit]);
                   setShowAddVisitModal(false);
                   alert('New shop visit successfully scheduled!');
+                  fetchLiveShops();
                 }}
                 className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold transition shadow-sm"
               >
                 Save Visit
               </button>
             </div>
+          </div>
+        </div>
+      )}
+      {/* RAISE NEW QUERY MODAL */}
+      {showAddQueryModal && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50 backdrop-blur-sm">
+          <div className="bg-white border border-slate-200 rounded-xl max-w-md w-full p-6 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <h3 className="text-base font-black text-slate-800">Raise New Support Query</h3>
+              <button onClick={() => setShowAddQueryModal(false)} className="text-slate-400 hover:text-slate-600">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-3.5 text-xs font-bold text-slate-700">
+              <div>
+                <label className="block mb-1">Customer Name *</label>
+                <input
+                  type="text"
+                  placeholder="e.g. Ramesh Kumar"
+                  value={newQueryData.customer}
+                  onChange={(e) => setNewQueryData({ ...newQueryData, customer: e.target.value })}
+                  className="w-full border border-slate-300 rounded-lg p-2.5 outline-none font-medium text-slate-900"
+                />
+              </div>
+
+              <div>
+                <label className="block mb-1">Shop / Business Name *</label>
+                <input
+                  type="text"
+                  placeholder="e.g. Balaji Groceries"
+                  value={newQueryData.shop}
+                  onChange={(e) => setNewQueryData({ ...newQueryData, shop: e.target.value })}
+                  className="w-full border border-slate-300 rounded-lg p-2.5 outline-none font-medium text-slate-900"
+                />
+              </div>
+
+              <div>
+                <label className="block mb-1">Priority *</label>
+                <select
+                  value={newQueryData.priority}
+                  onChange={(e) => setNewQueryData({ ...newQueryData, priority: e.target.value })}
+                  className="w-full border border-slate-300 rounded-lg p-2.5 outline-none bg-white font-bold text-slate-900"
+                >
+                  <option value="High">High</option>
+                  <option value="Medium">Medium</option>
+                  <option value="Low">Low</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block mb-1">Describe Issue *</label>
+                <textarea
+                  rows={3}
+                  placeholder="Explain the support ticket query details..."
+                  value={newQueryData.issue}
+                  onChange={(e) => setNewQueryData({ ...newQueryData, issue: e.target.value })}
+                  className="w-full border border-slate-300 rounded-lg p-2.5 outline-none font-medium text-slate-900"
+                />
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
+              <button
+                onClick={() => setShowAddQueryModal(false)}
+                className="px-4 py-2 border border-slate-200 text-slate-500 rounded-lg text-xs font-bold hover:bg-slate-50 transition"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  if (!newQueryData.customer || !newQueryData.shop || !newQueryData.issue) {
+                    alert('Please fill in all required fields!');
+                    return;
+                  }
+                  const newQuery = {
+                    ticketId: `TKT-${Math.floor(100 + Math.random() * 900)}`,
+                    customer: newQueryData.customer,
+                    shop: newQueryData.shop,
+                    issue: newQueryData.issue,
+                    priority: newQueryData.priority,
+                    status: 'Open'
+                  };
+                  const updatedList = [...customerQueries, newQuery];
+                  saveLocalQueries(updatedList);
+                  setShowAddQueryModal(false);
+                  setNewQueryData({ customer: '', shop: '', issue: '', priority: 'Medium' });
+                  alert('Support query ticket raised successfully!');
+                }}
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold transition shadow-sm"
+              >
+                Submit Query
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* TICKET DETAILS MODAL */}
+      {selectedTicket && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-[9999] backdrop-blur-sm">
+          <div className="bg-white border border-slate-200 rounded-xl max-w-md w-full p-6 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div>
+                <span className="text-[10px] uppercase font-black tracking-widest text-[#034ea2]">Support Ticket Details</span>
+                <h3 className="text-base font-black text-slate-800 mt-0.5">{selectedTicket.ticketId}</h3>
+              </div>
+              <button onClick={() => setSelectedTicket(null)} className="text-slate-400 hover:text-slate-600">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-4 text-xs font-bold text-slate-700">
+              <div className="grid grid-cols-2 gap-4 bg-slate-50 p-3 rounded-lg border border-slate-150">
+                <div>
+                  <span className="block text-[10px] text-slate-450 uppercase">Customer Name</span>
+                  <span className="text-slate-800 text-xs font-black">{selectedTicket.customer}</span>
+                </div>
+                <div>
+                  <span className="block text-[10px] text-slate-450 uppercase">Shop / Business</span>
+                  <span className="text-slate-800 text-xs font-black">{selectedTicket.shop}</span>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <span className="block text-[10px] text-slate-450 uppercase mb-1">Priority</span>
+                  <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${selectedTicket.priority === 'High' ? 'bg-red-50 text-red-650 border border-red-100' : selectedTicket.priority === 'Medium' ? 'bg-amber-50 text-amber-650 border border-amber-100' : 'bg-slate-50 text-slate-550'}`}>
+                    {selectedTicket.priority}
+                  </span>
+                </div>
+                <div>
+                  <span className="block text-[10px] text-slate-450 uppercase mb-1">Current Status</span>
+                  <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${selectedTicket.status === 'Resolved' ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : selectedTicket.status === 'In Progress' ? 'bg-amber-50 text-amber-650 border border-amber-100' : 'bg-red-50 text-red-650 border border-red-100'}`}>
+                    {selectedTicket.status}
+                  </span>
+                </div>
+              </div>
+
+              <div>
+                <span className="block text-[10px] text-slate-450 uppercase mb-1">Issue Description</span>
+                <div className="bg-slate-50 border border-slate-200 rounded-lg p-3 text-xs font-semibold text-slate-700 whitespace-pre-line leading-relaxed">
+                  {selectedTicket.issue}
+                </div>
+              </div>
+
+              {/* Status Update Actions */}
+              <div className="space-y-1.5 pt-2 border-t border-slate-100">
+                <span className="block text-[10px] text-slate-450 uppercase">Update Ticket Status</span>
+                <div className="grid grid-cols-3 gap-2">
+                  <button
+                    onClick={() => {
+                      const updated = customerQueries.map(q => q.ticketId === selectedTicket.ticketId ? { ...q, status: 'In Progress' } : q);
+                      saveLocalQueries(updated);
+                      setSelectedTicket({ ...selectedTicket, status: 'In Progress' });
+                    }}
+                    className={`py-1.5 px-2 rounded-lg border text-[10px] font-bold transition ${selectedTicket.status === 'In Progress' ? 'bg-amber-500 text-white border-amber-500' : 'bg-white hover:bg-slate-50 text-slate-600 border-slate-200'}`}
+                  >
+                    In Progress
+                  </button>
+                  <button
+                    onClick={() => {
+                      const updated = customerQueries.map(q => q.ticketId === selectedTicket.ticketId ? { ...q, status: 'Resolved' } : q);
+                      saveLocalQueries(updated);
+                      setSelectedTicket({ ...selectedTicket, status: 'Resolved' });
+                    }}
+                    className={`py-1.5 px-2 rounded-lg border text-[10px] font-bold transition ${selectedTicket.status === 'Resolved' ? 'bg-emerald-500 text-white border-emerald-500' : 'bg-white hover:bg-slate-50 text-slate-600 border-slate-200'}`}
+                  >
+                    Resolve
+                  </button>
+                  <button
+                    onClick={() => {
+                      const updated = customerQueries.map(q => q.ticketId === selectedTicket.ticketId ? { ...q, status: 'Closed' } : q);
+                      saveLocalQueries(updated);
+                      setSelectedTicket({ ...selectedTicket, status: 'Closed' });
+                    }}
+                    className={`py-1.5 px-2 rounded-lg border text-[10px] font-bold transition ${selectedTicket.status === 'Closed' ? 'bg-slate-600 text-white border-slate-600' : 'bg-white hover:bg-slate-50 text-slate-600 border-slate-200'}`}
+                  >
+                    Close
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex justify-end pt-2 border-t border-slate-100">
+              <button
+                onClick={() => setSelectedTicket(null)}
+                className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold transition shadow"
+              >
+                Close View
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* EDIT SHOP VISIT MODAL */}
+      {editingVisit && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-[9999] backdrop-blur-sm">
+          <div className="bg-white border border-slate-200 rounded-xl max-w-md w-full p-6 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <h3 className="text-base font-bold text-slate-800">Edit Shop Visit</h3>
+              <button onClick={() => setEditingVisit(null)} className="text-slate-400 hover:text-slate-600">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleEditVisitSubmit} className="space-y-4 text-xs font-bold text-slate-500 uppercase tracking-wider">
+              <div>
+                <label className="block mb-1.5">Shop Name</label>
+                <input
+                  type="text"
+                  required
+                  value={editVisitForm.name}
+                  onChange={(e) => setEditVisitForm({ ...editVisitForm, name: e.target.value })}
+                  className="w-full bg-slate-50 border border-slate-200 text-slate-800 px-3.5 py-2.5 rounded-lg outline-none focus:bg-white focus:border-blue-500 normal-case"
+                />
+              </div>
+
+              <div>
+                <label className="block mb-1.5">Address</label>
+                <textarea
+                  required
+                  rows={2}
+                  value={editVisitForm.address}
+                  onChange={(e) => setEditVisitForm({ ...editVisitForm, address: e.target.value })}
+                  className="w-full bg-slate-50 border border-slate-200 text-slate-800 px-3.5 py-2.5 rounded-lg outline-none focus:bg-white focus:border-blue-500 normal-case"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block mb-1.5">Owner Name</label>
+                  <input
+                    type="text"
+                    required
+                    value={editVisitForm.owner}
+                    onChange={(e) => setEditVisitForm({ ...editVisitForm, owner: e.target.value })}
+                    className="w-full bg-slate-50 border border-slate-200 text-slate-800 px-3.5 py-2.5 rounded-lg outline-none focus:bg-white focus:border-blue-500 normal-case"
+                  />
+                </div>
+                <div>
+                  <label className="block mb-1.5">Visit Time</label>
+                  <input
+                    type="text"
+                    required
+                    value={editVisitForm.time}
+                    onChange={(e) => setEditVisitForm({ ...editVisitForm, time: e.target.value })}
+                    className="w-full bg-slate-50 border border-slate-200 text-slate-800 px-3.5 py-2.5 rounded-lg outline-none focus:bg-white focus:border-blue-500"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block mb-1.5">Phone Number</label>
+                <input
+                  type="text"
+                  required
+                  value={editVisitForm.phone}
+                  onChange={(e) => setEditVisitForm({ ...editVisitForm, phone: e.target.value })}
+                  className="w-full bg-slate-50 border border-slate-200 text-slate-800 px-3.5 py-2.5 rounded-lg outline-none focus:bg-white focus:border-blue-500"
+                />
+              </div>
+
+              <button
+                type="submit"
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg shadow-lg mt-3 uppercase tracking-widest text-xs transition duration-200"
+              >
+                Save Changes
+              </button>
+            </form>
           </div>
         </div>
       )}

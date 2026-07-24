@@ -31,34 +31,43 @@ const Analytics = () => {
   };
 
   const assignedDistrict = user?.agentInfo?.district || user?.district || 'Salem District';
+  const assignedDivision = user?.agentInfo?.division || user?.division || 'Attur Division';
   const districtRegex = new RegExp(assignedDistrict.replace(/District/i, '').trim(), 'i');
+  const divRegex = new RegExp(assignedDivision.replace(/Division/i, '').trim(), 'i');
 
   const filteredShops = user?.role === 'District Agent' 
     ? shops.filter(s => s.district && districtRegex.test(s.district))
+    : user?.role === 'Divisional Agent'
+    ? shops.filter(s => s.division && divRegex.test(s.division))
     : shops;
 
   const currentMonthShops = filteredShops.length;
 
   const monthlyGrowthData = [
-    { month: 'Jan', shops: Math.floor(currentMonthShops * 0.1), target: Math.max(currentMonthShops, 10) },
-    { month: 'Feb', shops: Math.floor(currentMonthShops * 0.2), target: Math.max(currentMonthShops, 10) },
-    { month: 'Mar', shops: Math.floor(currentMonthShops * 0.4), target: Math.max(currentMonthShops, 10) },
-    { month: 'Apr', shops: Math.floor(currentMonthShops * 0.6), target: Math.max(currentMonthShops, 10) },
-    { month: 'May', shops: Math.floor(currentMonthShops * 0.8), target: Math.max(currentMonthShops, 10) },
-    { month: 'Jun', shops: currentMonthShops, target: Math.max(currentMonthShops, 10) },
+    { month: 'Jan', shops: 0, target: currentMonthShops },
+    { month: 'Feb', shops: 0, target: currentMonthShops },
+    { month: 'Mar', shops: 0, target: currentMonthShops },
+    { month: 'Apr', shops: 0, target: currentMonthShops },
+    { month: 'May', shops: 0, target: currentMonthShops },
+    { month: 'Jun', shops: currentMonthShops, target: currentMonthShops },
   ];
 
   const subAgentPerformanceData = user?.role === 'District Agent'
     ? [
-        { name: `${assignedDistrict} Zone 1`, shops: filteredShops.length, target: Math.max(filteredShops.length, 10) },
-        { name: `${assignedDistrict} Zone 2`, shops: 0, target: 10 },
+        { name: `${assignedDistrict} Zone 1`, shops: filteredShops.length, target: filteredShops.length },
+        { name: `${assignedDistrict} Zone 2`, shops: 0, target: 0 },
+      ]
+    : user?.role === 'Divisional Agent'
+    ? [
+        { name: `${assignedDivision} Zone 1`, shops: filteredShops.length, target: filteredShops.length },
+        { name: `${assignedDivision} Zone 2`, shops: 0, target: 0 },
       ]
     : [
-        { name: 'Chennai Division', shops: shops.filter(s => s.division?.includes('Chennai') || s.district?.includes('Chennai')).length, target: Math.max(shops.filter(s => s.division?.includes('Chennai') || s.district?.includes('Chennai')).length, currentMonthShops > 0 ? currentMonthShops : 10) },
-        { name: 'Coimbatore', shops: shops.filter(s => s.division?.includes('Coimbatore') || s.district?.includes('Coimbatore')).length, target: Math.max(shops.filter(s => s.division?.includes('Coimbatore') || s.district?.includes('Coimbatore')).length, currentMonthShops > 0 ? currentMonthShops : 10) },
-        { name: 'Madurai', shops: shops.filter(s => s.division?.includes('Madurai') || s.district?.includes('Madurai')).length, target: Math.max(shops.filter(s => s.division?.includes('Madurai') || s.district?.includes('Madurai')).length, currentMonthShops > 0 ? currentMonthShops : 10) },
-        { name: 'Trichy', shops: shops.filter(s => s.division?.includes('Trichy') || s.district?.includes('Trichy')).length, target: Math.max(shops.filter(s => s.division?.includes('Trichy') || s.district?.includes('Trichy')).length, currentMonthShops > 0 ? currentMonthShops : 10) },
-        { name: 'Salem', shops: shops.filter(s => s.division?.includes('Salem') || s.district?.includes('Salem')).length, target: Math.max(shops.filter(s => s.division?.includes('Salem') || s.district?.includes('Salem')).length, currentMonthShops > 0 ? currentMonthShops : 10) },
+        { name: 'Chennai Division', shops: shops.filter(s => s.division?.includes('Chennai') || s.district?.includes('Chennai')).length, target: shops.filter(s => s.division?.includes('Chennai') || s.district?.includes('Chennai')).length },
+        { name: 'Coimbatore', shops: shops.filter(s => s.division?.includes('Coimbatore') || s.district?.includes('Coimbatore')).length, target: shops.filter(s => s.division?.includes('Coimbatore') || s.district?.includes('Coimbatore')).length },
+        { name: 'Madurai', shops: shops.filter(s => s.division?.includes('Madurai') || s.district?.includes('Madurai')).length, target: shops.filter(s => s.division?.includes('Madurai') || s.district?.includes('Madurai')).length },
+        { name: 'Trichy', shops: shops.filter(s => s.division?.includes('Trichy') || s.district?.includes('Trichy')).length, target: shops.filter(s => s.division?.includes('Trichy') || s.district?.includes('Trichy')).length },
+        { name: 'Salem', shops: shops.filter(s => s.division?.includes('Salem') || s.district?.includes('Salem')).length, target: shops.filter(s => s.division?.includes('Salem') || s.district?.includes('Salem')).length },
       ];
 
   return (

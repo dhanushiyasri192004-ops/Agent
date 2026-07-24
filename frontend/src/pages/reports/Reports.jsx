@@ -17,7 +17,7 @@ const Reports = () => {
   const { user } = useSelector((state) => state.auth);
   const location = useLocation();
   const queryParams = new URLSearchParams(location.search);
-  const activeTab = queryParams.get('tab') || 'dashboard';
+  const activeTab = queryParams.get('tab') || (user?.role === 'Divisional Agent' ? 'pincode' : 'dashboard');
 
   const [reports, setReports] = useState([]);
   const [agents, setAgents] = useState([]);
@@ -36,7 +36,7 @@ const Reports = () => {
   const [submitting, setSubmitting] = useState(false);
 
   // Filter local states
-  const [selectedAgentLevel, setSelectedAgentLevel] = useState('Overview');
+  const [selectedAgentLevel, setSelectedAgentLevel] = useState('All');
 
   useEffect(() => {
     fetchData();
@@ -525,95 +525,143 @@ const Reports = () => {
     </>
   );
 
-  const renderAgent = () => (
-    <>
-      {/* Selector tabs for level */}
-      <div className="flex border-b border-slate-200 text-xs font-bold text-slate-500 uppercase tracking-widest gap-4 pb-2">
-        {['Overview', 'Divisional Agents', 'District Agents', 'Pincode Agents'].map((lvl) => (
-          <button
-            key={lvl}
-            onClick={() => setSelectedAgentLevel(lvl)}
-            className={`pb-1 transition select-none ${selectedAgentLevel === lvl ? 'text-blue-600 border-b-2 border-blue-600' : 'hover:text-slate-700'}`}
-          >
-            {lvl}
-          </button>
-        ))}
-      </div>
+  const renderAgent = () => {
+    let roleFilter = '';
+    if (selectedAgentLevel === 'Divisional Agents') roleFilter = 'Divisional Agent';
+    else if (selectedAgentLevel === 'District Agents') roleFilter = 'District Agent';
+    else if (selectedAgentLevel === 'Pincode Agents') roleFilter = 'Pincode Agent';
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {[
-          { label: 'Total Agents', val: agents.length.toLocaleString(), color: 'bg-blue-50 border-blue-100 text-blue-600' },
-          { label: 'Active Agents', val: agents.filter(a => a.status === 'Active' || a.status === 'Approved').length.toLocaleString(), color: 'bg-emerald-50 border-emerald-100 text-emerald-600' },
-          { label: 'Inactive Agents', val: agents.filter(a => a.status === 'Inactive').length.toLocaleString(), color: 'bg-rose-50 border-rose-100 text-rose-600' },
-          { label: 'New Agents (This Month)', val: agents.filter(a => a.status === 'Pending').length.toLocaleString(), color: 'bg-indigo-50 border-indigo-100 text-indigo-600' }
-        ].map((card, idx) => (
-          <div key={idx} className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm flex items-center justify-between">
-            <div>
-              <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">{card.label}</span>
-              <p className="text-2xl font-black text-slate-850 mt-1">{card.val}</p>
+    const levelAgents = roleFilter ? agents.filter(a => a.role === roleFilter) : agents;
+
+    return (
+      <>
+        {/* Selector tabs for level */}
+        <div className="flex border-b border-slate-200 text-xs font-bold text-slate-500 uppercase tracking-widest gap-4 pb-2">
+          {['All', 'District Agents', 'Divisional Agents', 'Pincode Agents'].map((lvl) => (
+            <button
+              key={lvl}
+              onClick={() => setSelectedAgentLevel(lvl)}
+              className={`pb-1 transition select-none ${selectedAgentLevel === lvl ? 'text-blue-600 border-b-2 border-blue-600' : 'hover:text-slate-700'}`}
+            >
+              {lvl}
+            </button>
+          ))}
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {[
+            { label: `Total ${selectedAgentLevel === 'All' ? 'Agents' : selectedAgentLevel}`, val: levelAgents.length.toLocaleString(), color: 'bg-blue-50 border-blue-100 text-blue-600' },
+            { label: 'Active', val: levelAgents.filter(a => a.status === 'Active' || a.status === 'Approved').length.toLocaleString(), color: 'bg-emerald-50 border-emerald-100 text-emerald-600' },
+            { label: 'Inactive', val: levelAgents.filter(a => a.status === 'Inactive').length.toLocaleString(), color: 'bg-rose-50 border-rose-100 text-rose-600' },
+            { label: 'Pending / New', val: levelAgents.filter(a => a.status === 'Pending').length.toLocaleString(), color: 'bg-indigo-50 border-indigo-100 text-indigo-600' }
+          ].map((card, idx) => (
+            <div key={idx} className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm flex items-center justify-between">
+              <div>
+                <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">{card.label}</span>
+                <p className="text-2xl font-black text-slate-850 mt-1">{card.val}</p>
+              </div>
+              <div className={`w-11 h-11 rounded-lg flex items-center justify-center ${card.color}`}>
+                <Users className="w-5.5 h-5.5" />
+              </div>
             </div>
-            <div className={`w-11 h-11 rounded-lg flex items-center justify-center ${card.color}`}>
-              <Users className="w-5.5 h-5.5" />
+          ))}
+        </div>
+
+        {selectedAgentLevel === 'All' ? (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-2 bg-white border border-slate-200 rounded-xl p-5 shadow-sm space-y-4">
+              <h3 className="text-base font-bold text-slate-800">Agent Performance by Level</h3>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs border-collapse">
+                  <thead>
+                    <tr className="bg-slate-50/70 border-b border-slate-100 text-slate-400 font-bold uppercase tracking-wider">
+                      <th className="p-3">Level</th>
+                      <th className="p-3">Total Agents</th>
+                      <th className="p-3">Active</th>
+                      <th className="p-3">Inactive</th>
+                      <th className="p-3">New This Month</th>
+                      <th className="p-3 text-right">Target Achieved %</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {[
+                      { level: 'Divisional Agents', total: agents.filter(a => a.role === 'Divisional Agent').length, active: agents.filter(a => a.role === 'Divisional Agent' && (a.status === 'Active' || a.status === 'Approved')).length, inactive: agents.filter(a => a.role === 'Divisional Agent' && a.status === 'Inactive').length, newText: agents.filter(a => a.role === 'Divisional Agent' && a.status === 'Pending').length, pct: agents.filter(a => a.role === 'Divisional Agent').length > 0 ? '100%' : '0%' },
+                      { level: 'District Agents', total: agents.filter(a => a.role === 'District Agent').length, active: agents.filter(a => a.role === 'District Agent' && (a.status === 'Active' || a.status === 'Approved')).length, inactive: agents.filter(a => a.role === 'District Agent' && a.status === 'Inactive').length, newText: agents.filter(a => a.role === 'District Agent' && a.status === 'Pending').length, pct: agents.filter(a => a.role === 'District Agent').length > 0 ? '100%' : '0%' },
+                      { level: 'Pincode Agents', total: agents.filter(a => a.role === 'Pincode Agent').length, active: agents.filter(a => a.role === 'Pincode Agent' && (a.status === 'Active' || a.status === 'Approved')).length, inactive: agents.filter(a => a.role === 'Pincode Agent' && a.status === 'Inactive').length, newText: agents.filter(a => a.role === 'Pincode Agent' && a.status === 'Pending').length, pct: agents.filter(a => a.role === 'Pincode Agent').length > 0 ? '100%' : '0%' }
+                    ].map((row, idx) => (
+                      <tr key={idx} className="hover:bg-slate-50/50 text-slate-650 font-bold transition">
+                        <td className="p-3 text-slate-800 font-extrabold">{row.level}</td>
+                        <td className="p-3 font-mono">{row.total}</td>
+                        <td className="p-3 font-mono text-slate-500">{row.active}</td>
+                        <td className="p-3 font-mono text-slate-450">{row.inactive}</td>
+                        <td className="p-3 font-mono text-blue-600">{row.newText}</td>
+                        <td className="p-3 text-right font-mono font-black text-emerald-650">{row.pct}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
+              <h3 className="text-base font-bold text-slate-850 mb-4 font-sans">Agent Performance Trend</h3>
+              <div className="h-56">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={[
+                    { name: 'Jan', value: 72 }, { name: 'Feb', value: 75 }, { name: 'Mar', value: 78 },
+                    { name: 'Apr', value: 80 }, { name: 'May', value: 82 }
+                  ]}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                    <XAxis dataKey="name" stroke="#64748b" fontSize={11} />
+                    <YAxis stroke="#64748b" fontSize={11} />
+                    <Tooltip />
+                    <Line type="monotone" dataKey="value" stroke="#8b5cf6" strokeWidth={2.5} name="Target Achieved %" />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
             </div>
           </div>
-        ))}
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 bg-white border border-slate-200 rounded-xl p-5 shadow-sm space-y-4">
-          <h3 className="text-base font-bold text-slate-800">Agent Performance by Level</h3>
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs border-collapse">
-              <thead>
-                <tr className="bg-slate-50/70 border-b border-slate-100 text-slate-400 font-bold uppercase tracking-wider">
-                  <th className="p-3">Level</th>
-                  <th className="p-3">Total Agents</th>
-                  <th className="p-3">Active</th>
-                  <th className="p-3">Inactive</th>
-                  <th className="p-3">New This Month</th>
-                  <th className="p-3 text-right">Target Achieved %</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {[
-                  { level: 'Divisional Agents', total: agents.filter(a => a.role === 'Divisional Agent').length, active: agents.filter(a => a.role === 'Divisional Agent' && (a.status === 'Active' || a.status === 'Approved')).length, inactive: agents.filter(a => a.role === 'Divisional Agent' && a.status === 'Inactive').length, newText: agents.filter(a => a.role === 'Divisional Agent' && a.status === 'Pending').length, pct: agents.filter(a => a.role === 'Divisional Agent').length > 0 ? '100%' : '0%' },
-                  { level: 'District Agents', total: agents.filter(a => a.role === 'District Agent').length, active: agents.filter(a => a.role === 'District Agent' && (a.status === 'Active' || a.status === 'Approved')).length, inactive: agents.filter(a => a.role === 'District Agent' && a.status === 'Inactive').length, newText: agents.filter(a => a.role === 'District Agent' && a.status === 'Pending').length, pct: agents.filter(a => a.role === 'District Agent').length > 0 ? '100%' : '0%' },
-                  { level: 'Pincode Agents', total: agents.filter(a => a.role === 'Pincode Agent').length, active: agents.filter(a => a.role === 'Pincode Agent' && (a.status === 'Active' || a.status === 'Approved')).length, inactive: agents.filter(a => a.role === 'Pincode Agent' && a.status === 'Inactive').length, newText: agents.filter(a => a.role === 'Pincode Agent' && a.status === 'Pending').length, pct: agents.filter(a => a.role === 'Pincode Agent').length > 0 ? '100%' : '0%' }
-                ].map((row, idx) => (
-                  <tr key={idx} className="hover:bg-slate-50/50 text-slate-650 font-bold transition">
-                    <td className="p-3 text-slate-800 font-extrabold">{row.level}</td>
-                    <td className="p-3 font-mono">{row.total}</td>
-                    <td className="p-3 font-mono text-slate-500">{row.active}</td>
-                    <td className="p-3 font-mono text-slate-450">{row.inactive}</td>
-                    <td className="p-3 font-mono text-blue-600">{row.newText}</td>
-                    <td className="p-3 text-right font-mono font-black text-emerald-650">{row.pct}</td>
+        ) : (
+          <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm space-y-4">
+            <h3 className="text-base font-bold text-slate-850">{selectedAgentLevel} Detail List</h3>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs border-collapse">
+                <thead>
+                  <tr className="bg-slate-50/70 border-b border-slate-100 text-slate-400 font-bold uppercase tracking-wider">
+                    <th className="p-3">Agent Name</th>
+                    <th className="p-3">District</th>
+                    <th className="p-3">Division</th>
+                    <th className="p-3">Phone</th>
+                    <th className="p-3">Status</th>
+                    <th className="p-3 text-right">Performance</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {levelAgents.map((agent, idx) => (
+                    <tr key={agent._id || idx} className="hover:bg-slate-50/50 text-slate-650 font-bold transition font-sans">
+                      <td className="p-3 text-slate-800 font-extrabold">{agent.name}</td>
+                      <td className="p-3 text-slate-600">{agent.district || 'N/A'}</td>
+                      <td className="p-3 text-slate-550">{agent.division || 'N/A'}</td>
+                      <td className="p-3 text-slate-450 font-mono">{agent.phone || 'N/A'}</td>
+                      <td className="p-3">
+                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${agent.status === 'Active' || agent.status === 'Approved' ? 'bg-emerald-50 text-emerald-650 border border-emerald-100' : 'bg-rose-50 text-rose-650 border border-rose-100'}`}>{agent.status || 'Active'}</span>
+                      </td>
+                      <td className="p-3 text-right font-mono font-black text-emerald-650">100%</td>
+                    </tr>
+                  ))}
+                  {levelAgents.length === 0 && (
+                    <tr>
+                      <td colSpan={6} className="p-8 text-center text-slate-400 font-semibold">No agents found for this level.</td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
-        </div>
-
-        <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
-          <h3 className="text-base font-bold text-slate-850 mb-4 font-sans">Agent Performance Trend</h3>
-          <div className="h-56">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={[
-                { name: 'Jan', value: 72 }, { name: 'Feb', value: 75 }, { name: 'Mar', value: 78 },
-                { name: 'Apr', value: 80 }, { name: 'May', value: 82 }
-              ]}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                <XAxis dataKey="name" stroke="#64748b" fontSize={11} />
-                <YAxis stroke="#64748b" fontSize={11} />
-                <Tooltip />
-                <Line type="monotone" dataKey="value" stroke="#8b5cf6" strokeWidth={2.5} name="Target Achieved %" />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-      </div>
-    </>
-  );
+        )}
+      </>
+    );
+  };
 
   const renderVendor = () => {
     const activeVendorsCount = vendors.filter(v => v.status === 'Active' || v.status === 'Verified').length;
@@ -916,52 +964,58 @@ const Reports = () => {
         {/* Tickets by Type */}
         <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm flex flex-col items-center justify-between">
           <h3 className="text-base font-bold text-slate-800 w-full text-left mb-2">Tickets by Type</h3>
-          <div className="h-44 w-full flex items-center justify-center relative">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie data={[
-                  { name: 'Customer Queries', value: 2456, color: '#3b82f6' },
-                  { name: 'Vendor Queries', value: 1876, color: '#10b981' },
-                  { name: 'Complaints', value: 876, color: '#f59e0b' },
-                  { name: 'Others', value: 224, color: '#8b5cf6' }
-                ]} cx="50%" cy="50%" innerRadius={50} outerRadius={68} paddingAngle={4} dataKey="value">
-                  {[
-                    { name: 'Customer Queries', value: 2456, color: '#3b82f6' },
-                    { name: 'Vendor Queries', value: 1876, color: '#10b981' },
-                    { name: 'Complaints', value: 876, color: '#f59e0b' },
-                    { name: 'Others', value: 224, color: '#8b5cf6' }
-                  ].map((entry, index) => <Cell key={`cell-${index}`} fill={entry.color} />)}
-                </Pie>
-                <Tooltip />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
+          {queries.length === 0 ? (
+            <div className="py-12 text-center text-xs text-slate-400 font-bold border border-dashed border-slate-200 rounded-xl w-full">
+              No tickets logged in the database yet.
+            </div>
+          ) : (
+            <div className="h-44 w-full flex items-center justify-center relative">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie data={[
+                    { name: 'Customer Queries', value: queries.filter(q => q.type === 'Customer').length, color: '#3b82f6' },
+                    { name: 'Vendor Queries', value: queries.filter(q => q.type === 'Vendor').length, color: '#10b981' },
+                    { name: 'Complaints', value: queries.filter(q => q.type === 'Complaint').length, color: '#f59e0b' },
+                    { name: 'Others', value: queries.filter(q => !['Customer', 'Vendor', 'Complaint'].includes(q.type)).length, color: '#8b5cf6' }
+                  ]} cx="50%" cy="50%" innerRadius={50} outerRadius={68} paddingAngle={4} dataKey="value">
+                    {[
+                      { name: 'Customer Queries', value: queries.filter(q => q.type === 'Customer').length, color: '#3b82f6' },
+                      { name: 'Vendor Queries', value: queries.filter(q => q.type === 'Vendor').length, color: '#10b981' },
+                      { name: 'Complaints', value: queries.filter(q => q.type === 'Complaint').length, color: '#f59e0b' },
+                      { name: 'Others', value: queries.filter(q => !['Customer', 'Vendor', 'Complaint'].includes(q.type)).length, color: '#8b5cf6' }
+                    ].map((entry, index) => <Cell key={`cell-${index}`} fill={entry.color} />)}
+                  </Pie>
+                  <Tooltip />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+          )}
         </div>
 
         {/* Tickets Status Over Time Area Chart */}
-        <div className="lg:col-span-2 bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
+        <div className="lg:col-span-2 bg-white border border-slate-200 rounded-xl p-5 shadow-sm flex flex-col justify-between">
           <h3 className="text-base font-bold text-slate-855 mb-4">Tickets Status Over Time</h3>
-          <div className="h-56">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={[
-                { name: 'May 01', Resolved: 400, Pending: 100, Escalated: 20 },
-                { name: 'May 06', Resolved: 480, Pending: 120, Escalated: 25 },
-                { name: 'May 11', Resolved: 520, Pending: 110, Escalated: 18 },
-                { name: 'May 16', Resolved: 600, Pending: 140, Escalated: 30 },
-                { name: 'May 21', Resolved: 580, Pending: 130, Escalated: 22 },
-                { name: 'May 26', Resolved: 670, Pending: 150, Escalated: 35 },
-                { name: 'May 31', Resolved: 720, Pending: 120, Escalated: 28 }
-              ]}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                <XAxis dataKey="name" stroke="#64748b" fontSize={9} />
-                <YAxis stroke="#64748b" fontSize={9} />
-                <Tooltip />
-                <Area type="monotone" dataKey="Resolved" stackId="1" stroke="#10b981" fill="#ecfdf5" />
-                <Area type="monotone" dataKey="Pending" stackId="1" stroke="#f59e0b" fill="#fffbeb" />
-                <Area type="monotone" dataKey="Escalated" stackId="1" stroke="#ef4444" fill="#fef2f2" />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
+          {queries.length === 0 ? (
+            <div className="py-12 text-center text-xs text-slate-400 font-bold border border-dashed border-slate-200 rounded-xl flex-1 flex items-center justify-center">
+              No ticket status trend data available.
+            </div>
+          ) : (
+            <div className="h-56">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={[
+                  { name: 'May 01', Resolved: queries.filter(q => q.status === 'Resolved').length, Pending: queries.filter(q => q.status === 'Pending').length, Escalated: queries.filter(q => q.status === 'Escalated').length }
+                ]}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                  <XAxis dataKey="name" stroke="#64748b" fontSize={9} />
+                  <YAxis stroke="#64748b" fontSize={9} />
+                  <Tooltip />
+                  <Area type="monotone" dataKey="Resolved" stackId="1" stroke="#10b981" fill="#ecfdf5" />
+                  <Area type="monotone" dataKey="Pending" stackId="1" stroke="#f59e0b" fill="#fffbeb" />
+                  <Area type="monotone" dataKey="Escalated" stackId="1" stroke="#ef4444" fill="#fef2f2" />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          )}
         </div>
       </div>
     </>

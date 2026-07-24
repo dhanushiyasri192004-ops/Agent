@@ -96,28 +96,35 @@ export const getMySubAgents = async (req, res, next) => {
       query = {};
     } else {
       const parentAgent = await Agent.findOne({ user: req.user._id });
-      if (!parentAgent) {
-        res.status(404);
-        throw new Error('Agent profile not found.');
-      }
+      const userState = parentAgent ? parentAgent.state : 'Tamil Nadu';
 
       if (creatorRole === 'State Agent') {
-        query = { state: parentAgent.state, role: { $ne: 'State Agent' } };
+        query = {
+          $or: [
+            { state: userState },
+            { state: { $exists: false } },
+            { state: '' }
+          ]
+        };
       } else if (creatorRole === 'District Agent') {
+        const userDistrict = parentAgent ? parentAgent.district : '';
+        const districtRegex = userDistrict ? new RegExp(userDistrict.replace(/District/i, '').trim(), 'i') : null;
         query = {
-          state: parentAgent.state,
-          district: parentAgent.district,
-          role: { $in: ['Divisional Agent', 'Pincode Agent'] },
+          role: { $in: ['Divisional Agent', 'Pincode Agent'] }
         };
+        if (districtRegex) {
+          query.district = { $regex: districtRegex };
+        }
       } else if (creatorRole === 'Divisional Agent') {
+        const userDivision = parentAgent ? parentAgent.division : '';
         query = {
-          state: parentAgent.state,
-          district: parentAgent.district,
-          division: parentAgent.division,
-          role: 'Pincode Agent',
+          role: 'Pincode Agent'
         };
+        if (userDivision) {
+          query.division = userDivision;
+        }
       } else {
-        return res.json([]);
+        query = { user: req.user._id };
       }
     }
 
@@ -140,16 +147,13 @@ export const toggleAgentStatus = async (req, res, next) => {
     }
 
     const agentUser = await User.findById(agent.user);
-    if (!agentUser) {
-      res.status(404);
-      throw new Error('Agent user credentials not found');
+    if (agentUser) {
+      agentUser.status = status;
+      await agentUser.save();
     }
 
     agent.status = status;
-    agentUser.status = status;
-
     await agent.save();
-    await agentUser.save();
 
     await ActivityLog.create({
       user: req.user._id,
@@ -158,6 +162,65 @@ export const toggleAgentStatus = async (req, res, next) => {
     });
 
     res.json({ success: true, agent });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const updateAgent = async (req, res, next) => {
+  const { id } = req.params;
+  const { name, phone, state, district, division, pincode } = req.body;
+
+  try {
+    const agent = await Agent.findById(id);
+    if (!agent) {
+      res.status(404);
+      throw new Error('Agent not found');
+    }
+
+    agent.name = name || agent.name;
+    agent.phone = phone || agent.phone;
+    agent.state = state || agent.state;
+    agent.district = district || agent.district;
+    agent.division = division || agent.division;
+    agent.pincode = pincode || agent.pincode;
+
+    await agent.save();
+
+    await ActivityLog.create({
+      user: req.user._id,
+      action: 'Update Agent',
+      description: `Updated Agent details for: ${agent.name}`,
+    });
+
+    res.json({ success: true, agent });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const deleteAgent = async (req, res, next) => {
+  const { id } = req.params;
+  try {
+    const agent = await Agent.findById(id);
+    if (!agent) {
+      res.status(404);
+      throw new Error('Agent not found');
+    }
+
+    if (agent.user) {
+      await User.findByIdAndDelete(agent.user);
+    }
+    await Agent.findByIdAndDelete(id);
+
+    await ActivityLog.create({
+      user: req.user._id,
+      action: 'Delete Agent',
+      description: `Deleted Agent: ${agent.name} (${agent.role})`,
+      ipAddress: req.ip || '',
+    });
+
+    res.json({ success: true, message: 'Agent deleted permanently from database.' });
   } catch (error) {
     next(error);
   }

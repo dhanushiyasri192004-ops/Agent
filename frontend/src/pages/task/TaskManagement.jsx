@@ -130,35 +130,7 @@ const TaskManagement = () => {
           ))}
       </div>
 
-      {/* Hierarchical Target Cascade Workflow */}
-      <div className="bg-white border border-slate-200/80 rounded-xl p-5 shadow-sm space-y-4">
-        <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-          <div>
-            <h3 className="text-base font-bold text-slate-800">Hierarchical Target Cascade Workflow</h3>
-            <p className="text-xs text-slate-500 font-semibold mt-0.5">Cascade targets down the hierarchy: Admin → State → District → Division → Pincode Agent.</p>
-          </div>
-          <span className="text-xs font-bold text-forge-gold bg-amber-50 border border-forge-gold/30 px-2.5 py-1 rounded">RBAC Scoped</span>
-        </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
-          {[
-            { level: '1. Admin', title: 'Sets State Target', assignTo: 'State Agent', target: '500 Shops / Mo' },
-            { level: '2. State Agent', title: 'Distributes to District', assignTo: 'District Agents', target: '100 Shops / Dist' },
-            { level: '3. District Agent', title: 'Distributes to Division', assignTo: 'Divisional Agents', target: '25 Shops / Div' },
-            { level: '4. Divisional Agent', title: 'Distributes to Pincode', assignTo: 'Pincode Agents', target: '5 Shops / Pin' },
-            { level: '5. Pincode Agent', title: 'Executes Registrations', assignTo: 'Local Shops', target: 'On-Field Visits' },
-          ].map((step, idx) => (
-            <div key={idx} className="bg-slate-50 border border-slate-200/60 p-3.5 rounded-xl space-y-1.5 text-xs">
-              <span className="text-[10px] font-black text-forge-gold uppercase tracking-wider block">{step.level}</span>
-              <h4 className="font-bold text-slate-800">{step.title}</h4>
-              <p className="text-[11px] text-slate-500 font-medium">Recipient: <strong className="text-slate-700">{step.assignTo}</strong></p>
-              <span className="inline-block bg-white border border-slate-200 text-slate-700 font-bold text-[10px] px-2 py-0.5 rounded shadow-2xs">
-                {step.target}
-              </span>
-            </div>
-          ))}
-        </div>
-      </div>
 
       {/* Create Task Modal Overlay */}
       {showModal && (

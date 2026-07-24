@@ -28,3 +28,7 @@ backend/uploads/*
 # OS files
 .DS_Store
 Thumbs.db
+
+# Local DB
+backend/data_db/
+

@@ -1,5 +1,5 @@
 import express from 'express';
-import { createAgent, getMySubAgents, toggleAgentStatus } from '../controllers/agentController.js';
+import { createAgent, getMySubAgents, toggleAgentStatus, updateAgent, deleteAgent } from '../controllers/agentController.js';
 import { protect } from '../middleware/authMiddleware.js';
 import { checkRole } from '../middleware/roleMiddleware.js';
 
@@ -24,6 +24,20 @@ router.patch(
   protect,
   checkRole('Admin', 'State Agent', 'Divisional Agent', 'District Agent'),
   toggleAgentStatus
+);
+
+router.patch(
+  '/:id',
+  protect,
+  checkRole('Admin', 'State Agent', 'Divisional Agent', 'District Agent'),
+  updateAgent
+);
+
+router.delete(
+  '/:id',
+  protect,
+  checkRole('Admin', 'State Agent', 'Divisional Agent', 'District Agent'),
+  deleteAgent
 );
 
 export default router;
