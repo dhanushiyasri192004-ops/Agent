@@ -165,9 +165,9 @@ const Commission = () => {
               <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
                 <span className="block text-slate-400 text-xs font-bold uppercase tracking-wider">Commission Rate</span>
                 <span className="block text-3xl font-black text-[#034ea2] mt-2 flex items-center justify-center gap-1">
-                  <Percent className="w-6 h-6 text-[#f5c518]" /> {commissionRateLabel}
+                  {commissionRateLabel}
                 </span>
-                <span className="text-[10px] text-slate-500 font-extrabold block mt-1">Role: {roleLabel} (₹{flatCommissionAmount}/shop)</span>
+                <span className="text-[10px] text-slate-500 font-extrabold block mt-1">Role: {roleLabel}</span>
               </div>
 
               <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">

@@ -531,13 +531,20 @@ const Reports = () => {
     else if (selectedAgentLevel === 'District Agents') roleFilter = 'District Agent';
     else if (selectedAgentLevel === 'Pincode Agents') roleFilter = 'Pincode Agent';
 
-    const levelAgents = roleFilter ? agents.filter(a => a.role === roleFilter) : agents;
+    let levelAgents = roleFilter ? agents.filter(a => a.role === roleFilter) : agents;
+    if (user?.role === 'District Agent' && selectedAgentLevel === 'All') {
+      levelAgents = agents.filter(a => a.role === 'Divisional Agent' || a.role === 'Pincode Agent');
+    }
+
+    const availableLevels = user?.role === 'District Agent'
+      ? ['All', 'Divisional Agents', 'Pincode Agents']
+      : ['All', 'District Agents', 'Divisional Agents', 'Pincode Agents'];
 
     return (
       <>
         {/* Selector tabs for level */}
         <div className="flex border-b border-slate-200 text-xs font-bold text-slate-500 uppercase tracking-widest gap-4 pb-2">
-          {['All', 'District Agents', 'Divisional Agents', 'Pincode Agents'].map((lvl) => (
+          {availableLevels.map((lvl) => (
             <button
               key={lvl}
               onClick={() => setSelectedAgentLevel(lvl)}
@@ -586,10 +593,10 @@ const Reports = () => {
                   <tbody className="divide-y divide-slate-100">
                     {[
                       { level: 'Divisional Agents', total: agents.filter(a => a.role === 'Divisional Agent').length, active: agents.filter(a => a.role === 'Divisional Agent' && (a.status === 'Active' || a.status === 'Approved')).length, inactive: agents.filter(a => a.role === 'Divisional Agent' && a.status === 'Inactive').length, newText: agents.filter(a => a.role === 'Divisional Agent' && a.status === 'Pending').length, pct: agents.filter(a => a.role === 'Divisional Agent').length > 0 ? '100%' : '0%' },
-                      { level: 'District Agents', total: agents.filter(a => a.role === 'District Agent').length, active: agents.filter(a => a.role === 'District Agent' && (a.status === 'Active' || a.status === 'Approved')).length, inactive: agents.filter(a => a.role === 'District Agent' && a.status === 'Inactive').length, newText: agents.filter(a => a.role === 'District Agent' && a.status === 'Pending').length, pct: agents.filter(a => a.role === 'District Agent').length > 0 ? '100%' : '0%' },
+                      ...(user?.role !== 'District Agent' ? [{ level: 'District Agents', total: agents.filter(a => a.role === 'District Agent').length, active: agents.filter(a => a.role === 'District Agent' && (a.status === 'Active' || a.status === 'Approved')).length, inactive: agents.filter(a => a.role === 'District Agent' && a.status === 'Inactive').length, newText: agents.filter(a => a.role === 'District Agent' && a.status === 'Pending').length, pct: agents.filter(a => a.role === 'District Agent').length > 0 ? '100%' : '0%' }] : []),
                       { level: 'Pincode Agents', total: agents.filter(a => a.role === 'Pincode Agent').length, active: agents.filter(a => a.role === 'Pincode Agent' && (a.status === 'Active' || a.status === 'Approved')).length, inactive: agents.filter(a => a.role === 'Pincode Agent' && a.status === 'Inactive').length, newText: agents.filter(a => a.role === 'Pincode Agent' && a.status === 'Pending').length, pct: agents.filter(a => a.role === 'Pincode Agent').length > 0 ? '100%' : '0%' }
                     ].map((row, idx) => (
-                      <tr key={idx} className="hover:bg-slate-50/50 text-slate-650 font-bold transition">
+                      <tr key={idx} className="hover:bg-slate-50/50 text-slate-655 font-bold transition">
                         <td className="p-3 text-slate-800 font-extrabold">{row.level}</td>
                         <td className="p-3 font-mono">{row.total}</td>
                         <td className="p-3 font-mono text-slate-500">{row.active}</td>

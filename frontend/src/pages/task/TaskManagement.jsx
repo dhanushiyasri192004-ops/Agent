@@ -16,6 +16,7 @@ const TaskManagement = () => {
   const [taskFrom, setTaskFrom] = useState('');
   const [taskTarget, setTaskTarget] = useState('My Tasks'); // Which tab it belongs to
   const [taskSteps, setTaskSteps] = useState(1);
+  const [taskAgents, setTaskAgents] = useState('');
 
   const handleCreateTask = (e) => {
     e.preventDefault();
@@ -23,9 +24,10 @@ const TaskManagement = () => {
 
     const newTask = {
       title: taskTitle,
-      priority: taskPriority,
+      priority: 'Medium',
       due: taskDue ? new Date(taskDue).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : 'No Limit',
-      from: taskFrom || 'System',
+      from: 'System',
+      agents: taskAgents || 'All Agents',
       completed: 0,
       total: parseInt(taskSteps) || 1,
       isMyTask: taskTarget === 'My Tasks',
@@ -43,6 +45,7 @@ const TaskManagement = () => {
     setTaskFrom('');
     setTaskTarget('My Tasks');
     setTaskSteps(1);
+    setTaskAgents('');
   };
 
   const totalCount = tasks.length;
@@ -115,7 +118,7 @@ const TaskManagement = () => {
                   <h4 className="text-sm font-extrabold text-slate-800">{task.title}</h4>
                   <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${task.priority === 'High' ? 'bg-red-50 text-red-600 border border-red-100' : task.priority === 'Medium' ? 'bg-amber-50 text-amber-600 border border-amber-100' : 'bg-slate-50 text-slate-600 border border-slate-100'}`}>{task.priority}</span>
                 </div>
-                <p className="text-[11px] text-slate-400 font-bold uppercase tracking-wider">From: {task.from}</p>
+                <p className="text-[11px] text-slate-400 font-bold uppercase tracking-wider">Agents: {task.agents}</p>
               </div>
               <div className="space-y-2 mt-4">
                 <div className="flex items-center justify-between text-xs text-slate-500 font-bold">
@@ -145,7 +148,7 @@ const TaskManagement = () => {
 
             <form onSubmit={handleCreateTask} className="space-y-4">
               <div>
-                <label className="block mb-1.5">Task Title / Target Goal</label>
+                <label className="block mb-1.5">Task Title</label>
                 <input
                   type="text"
                   required
@@ -158,16 +161,14 @@ const TaskManagement = () => {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block mb-1.5">Priority</label>
-                  <select
-                    value={taskPriority}
-                    onChange={(e) => setTaskPriority(e.target.value)}
+                  <label className="block mb-1.5">Agents</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Pincode Agents"
+                    value={taskAgents}
+                    onChange={(e) => setTaskAgents(e.target.value)}
                     className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-slate-700 outline-none focus:border-blue-500 font-medium normal-case"
-                  >
-                    <option value="High">High</option>
-                    <option value="Medium">Medium</option>
-                    <option value="Low">Low</option>
-                  </select>
+                  />
                 </div>
                 <div>
                   <label className="block mb-1.5">Target Level</label>
@@ -184,17 +185,7 @@ const TaskManagement = () => {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block mb-1.5">Issuer / Authority</label>
-                  <input
-                    type="text"
-                    placeholder="e.g. District Agent"
-                    value={taskFrom}
-                    onChange={(e) => setTaskFrom(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-slate-700 outline-none focus:border-blue-500 font-medium normal-case"
-                  />
-                </div>
-                <div>
-                  <label className="block mb-1.5">Target Quota (Shops)</label>
+                  <label className="block mb-1.5">Target</label>
                   <input
                     type="number"
                     min="1"
@@ -203,16 +194,15 @@ const TaskManagement = () => {
                     className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-slate-700 outline-none focus:border-blue-500 font-medium normal-case"
                   />
                 </div>
-              </div>
-
-              <div>
-                <label className="block mb-1.5">Target Deadline</label>
-                <input
-                  type="date"
-                  value={taskDue}
-                  onChange={(e) => setTaskDue(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-slate-700 outline-none focus:border-blue-500 font-medium normal-case"
-                />
+                <div>
+                  <label className="block mb-1.5">Deadline</label>
+                  <input
+                    type="date"
+                    value={taskDue}
+                    onChange={(e) => setTaskDue(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-slate-700 outline-none focus:border-blue-500 font-medium normal-case"
+                  />
+                </div>
               </div>
 
               <button
