@@ -310,12 +310,6 @@ const StateDashboard = () => {
           </p>
         </div>
         <div className="flex items-center gap-3 self-end sm:self-auto">
-          <button
-            onClick={handleResetDatabase}
-            className="bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 font-bold px-3.5 py-1.5 rounded-lg text-xs transition duration-200 shadow-sm active:scale-95"
-          >
-            Reset & Re-Seed Database
-          </button>
           <div className="flex items-center gap-2">
             <span className="text-sm font-semibold text-slate-500">State</span>
             <span className="bg-white border border-slate-200 rounded-lg px-3 py-1.5 text-sm font-bold text-slate-700 select-none">
