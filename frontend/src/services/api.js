@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: '',
+  baseURL: 'https://agent-backend-93ja.onrender.com',
 });
 
 // Interceptor to add JWT token to requests if available
